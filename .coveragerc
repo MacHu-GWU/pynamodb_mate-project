@@ -1,0 +1,28 @@
+# Coverage.py is a tool for measuring code coverage of Python programs.
+# for more info: https://coverage.readthedocs.io/en/latest/config.html
+[run]
+omit =
+    pynamodb_mate/_version.py
+    pynamodb_mate/cli.py
+    pynamodb_mate/pkg/*
+    pynamodb_mate/docs/*
+    pynamodb_mate/tests/*
+    pynamodb_mate/handlers/*
+
+[report]
+# Regexes for lines to exclude from consideration
+exclude_lines =
+    # Have to re-enable the standard pragma
+    pragma: no cover
+
+    # Don't complain about missing debug-only code:
+    def __repr__
+    if self\.debug
+
+    # Don't complain if tests don't hit defensive assertion code:
+    raise AssertionError
+    raise NotImplementedError
+
+    # Don't complain if non-runnable code isn't run:
+    if 0:
+    if __name__ == .__main__.:
