@@ -80,19 +80,19 @@ Here's how you define your ORM layer:
             table_name = "pynamodb_mate-pages"
             region = "us-east-1"
 
-    url = UnicodeAttribute(hash_key=True)
-    cover_image_url = UnicodeAttribute(null=True)
+        url = UnicodeAttribute(hash_key=True)
+        cover_image_url = UnicodeAttribute(null=True)
 
-    # this field is for html content string
-    html_content = S3BackedUnicodeAttribute(
-        s3_uri_getter=lambda obj: URI_PREFIX + s3_key_safe_b64encode(obj.url) + ".html",
-        compress=True,
-    )
-    # this field is for image binary content
-    cover_image_content = S3BackedBinaryAttribute(
-        s3_uri_getter=lambda obj: URI_PREFIX + s3_key_safe_b64encode(obj.cover_image_url) + ".jpg",
-        compress=True,
-    )
+        # this field is for html content string
+        html_content = S3BackedUnicodeAttribute(
+            s3_uri_getter=lambda obj: URI_PREFIX + s3_key_safe_b64encode(obj.url) + ".html",
+            compress=True,
+        )
+        # this field is for image binary content
+        cover_image_content = S3BackedBinaryAttribute(
+            s3_uri_getter=lambda obj: URI_PREFIX + s3_key_safe_b64encode(obj.cover_image_url) + ".jpg",
+            compress=True,
+        )
 
 Here's how you store large binary to s3:
 
