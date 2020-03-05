@@ -10,7 +10,7 @@ from pynamodb_mate.encrypt_attribute import (
     EncryptUnicodeAttribute,
     EncryptBinaryAttribute,
     EncryptedNumberAttribute,
-    EncryptedJsonObject,
+    EncryptedJsonAttribute,
 )
 
 AWS_PROFILE = "pynamodb_mate"
@@ -37,7 +37,7 @@ class ArchiveModel(Model):
     secret_float = EncryptedNumberAttribute()
     secret_float.encrypt_key = PASSWORD
 
-    secret_data = EncryptedJsonObject()
+    secret_data = EncryptedJsonAttribute()
     secret_data.encrypt_key = PASSWORD
 
 

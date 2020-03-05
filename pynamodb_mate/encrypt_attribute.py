@@ -51,5 +51,5 @@ class EncryptedNumberAttribute(UnicodeAttribute, SymmetricEncryptedAttribute):
         return json_loads(self.get_cipher().decrypt_text(value))
 
 
-class EncryptedJsonObject(EncryptedNumberAttribute):
+class EncryptedJsonAttribute(EncryptedNumberAttribute):
     pass
