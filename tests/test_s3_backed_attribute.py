@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import os
+
 import pytest
-from pynamodb.models import Model
 from pynamodb.attributes import UnicodeAttribute
+from pynamodb.models import Model
+
 from pynamodb_mate.s3_backed_attribute import (
     S3BackedBinaryAttribute,
     S3BackedUnicodeAttribute,
@@ -29,13 +31,11 @@ class PageModel(Model, S3BackedMixin):
     cover_image_url = UnicodeAttribute(null=True)
 
     html_content = S3BackedUnicodeAttribute(
-        s3_uri_getter=lambda obj: URI_PREFIX +
-        s3_key_safe_b64encode(obj.url) + ".html",
+        s3_uri_getter=lambda obj: URI_PREFIX + s3_key_safe_b64encode(obj.url) + ".html",
         compress=True,
     )
     cover_image_content = S3BackedBinaryAttribute(
-        s3_uri_getter=lambda obj: URI_PREFIX +
-        s3_key_safe_b64encode(obj.cover_image_url) + ".jpg",
+        s3_uri_getter=lambda obj: URI_PREFIX + s3_key_safe_b64encode(obj.cover_image_url) + ".jpg",
         compress=True,
     )
 
@@ -58,7 +58,7 @@ class TestS3BackedMixin(object):
 
         html_content = "Hello World!\n" * 1000
         cover_image_content = (
-            "this is a dummy image!\n" * 1000).encode("utf-8")
+                "this is a dummy image!\n" * 1000).encode("utf-8")
 
         # create
         page = PageModel(url=url, cover_image_url=url_cover_image)
@@ -76,7 +76,7 @@ class TestS3BackedMixin(object):
         # update
         html_content_new = "Good Bye!\n" * 1000
         cover_image_content_new = (
-            "this is another dummy image!\n" * 1000).encode("utf-8")
+                "this is another dummy image!\n" * 1000).encode("utf-8")
 
         page.atomic_update(
             s3_backed_data=[
@@ -85,10 +85,11 @@ class TestS3BackedMixin(object):
             ]
         )
         assert page.html_content.read_data(page) == html_content_new
-        assert page.cover_image_content.read_data(
-            page) == cover_image_content_new
+        assert page.cover_image_content.read_data(page) == cover_image_content_new
 
         # delete binary on s3
+        page.html_content.read_data(page)
+        page.cover_image_content.read_data(page)
         page.atomic_delete()
         with pytest.raises(Exception):
             page.html_content.read_data(page)

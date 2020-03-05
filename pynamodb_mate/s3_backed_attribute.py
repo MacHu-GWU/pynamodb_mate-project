@@ -2,11 +2,21 @@
 
 """
 Implement S3 Backed Binary and Unicode Attribute.
+
+Since the content of big Binary or Unicode are not stored in DynamoDB, we
+cannot use custom attriubte ``pynamodb.attributes.Attribute`` to implement it.
 """
 
 import zlib
-from six import string_types
 from base64 import b64encode, b64decode
+
+from pynamodb.models import Model
+from six import string_types
+
+try:
+    import typing
+except:
+    pass
 
 
 def s3_key_safe_b64encode(text):
@@ -31,10 +41,11 @@ class BaseS3BackedAttribute(object):
     """
     Implement S3 relative operation for each attribute.
 
-    :type s3_uri_getter: str
+    :type s3_uri_getter: typing.Union[str, typing.Callable]
     :param s3_uri_getter: str or callable function, it takes the pynamodb orm
         object as input, returns the S3 URI string for this s3 backed attribute.
     """
+
     def __init__(self, s3_uri_getter, compress=False, name=None):
         self.s3_uri_getter = s3_uri_getter
         if isinstance(s3_uri_getter, string_types):
@@ -131,7 +142,7 @@ class S3BackedUnicodeAttribute(BaseS3BackedAttribute):
         return data.decode("utf-8")
 
 
-class S3BackedMixin(object):
+class S3BackedMixin(object):  # type: typing.Type[Model]
     _s3_client = None
     _s3_backed_attr_mapper = None
     _s3_backed_value_mapper = None
@@ -139,6 +150,8 @@ class S3BackedMixin(object):
     @classmethod
     def get_s3_backed_attr_mapper(cls):
         """
+        :type cls: Model
+
         :rtype: dict
         """
         if cls._s3_backed_attr_mapper is None:
@@ -154,6 +167,9 @@ class S3BackedMixin(object):
 
     @classmethod
     def get_s3_client(cls):
+        """
+        :type cls: Model
+        """
         if cls._s3_client is None:
             pynamodb_connection = cls._get_connection().connection
             cls._s3_client = pynamodb_connection.session.create_client(
@@ -162,11 +178,11 @@ class S3BackedMixin(object):
 
     def atomic_save(self,
                     condition=None,
-                    conditional_operator=None,
-                    s3_backed_data=None,
-                    **expected_values):
+                    s3_backed_data=None):
         """
         An ``atomic`` save operation for multiple S3 backed attribute.
+
+        :type self: typing.Union[Model, S3BackedMixin]
 
         :type s3_backed_data: List[BaseS3BackedAttribute.set_to(data)]
         :param s3_backed_data: example ``[page.html_content.set_to("<html> ... </html>"), page.image_content.set_to(b"...")]``
@@ -187,12 +203,9 @@ class S3BackedMixin(object):
                 raise put_object_error
 
         try:
-            self.save(
-                condition=condition,
-                conditional_operator=conditional_operator,
-                **expected_values
-            )
+            res = self.save(condition=condition)
             del saved_data_list
+            return res
         except Exception as dynamodb_save_error:  # delete saved s3 object if dynamodb write operation failed
             for s3_backed_attr, data in saved_data_list:
                 s3_backed_attr.delete_object(self)
@@ -200,15 +213,13 @@ class S3BackedMixin(object):
             raise dynamodb_save_error
 
     def atomic_update(self,
-                      attributes=None,
                       actions=None,
                       condition=None,
-                      conditional_operator=None,
-                      s3_backed_data=None,
-                      **expected_values
-                      ):
+                      s3_backed_data=None):
         """
         An ``atomic`` update operation for multiple S3 backed attribute.
+
+        :type self: typing.Union[Model, S3BackedMixin]
 
         :type s3_backed_data: List[BaseS3BackedAttribute.set_to(data)]
         :param s3_backed_data: example ``[page.html_content.set_to("<html> ... </html>"), page.image_content.set_to(b"...")]``
@@ -220,7 +231,11 @@ class S3BackedMixin(object):
         for s3_backed_attr, data in s3_backed_data:
             try:
                 previous_data_list.append(
-                    (s3_backed_attr, s3_backed_attr._read_binary_data(self)))
+                    (
+                        s3_backed_attr,
+                        s3_backed_attr._read_binary_data(self)
+                    )
+                )
                 s3_backed_attr.put_object(self, data)
             # if any of s3.put_object failed, roll back and skip dynamodb.put_item
             except Exception as put_object_error:
@@ -228,29 +243,17 @@ class S3BackedMixin(object):
                     s3_backed_attr.put_object(self, data)
                 raise put_object_error
 
-        if (attributes is None) and (actions is None):
-            return
-
-        self.update(
-            attributes=attributes,
-            actions=actions,
-            condition=condition,
-            conditional_operator=conditional_operator,
-            **expected_values
-        )
+        if actions is not None:
+            return self.update(actions=actions, condition=condition)
 
     def atomic_delete(self,
-                      condition=None,
-                      conditional_operator=None,
-                      **expected_values):
+                      condition=None):
         """
         An ``atomic`` delete operation for multiple S3 backed attribute.
+
+        :type self: typing.Union[Model, S3BackedMixin]
         """
-        self.delete(
-            condition=condition,
-            conditional_operator=conditional_operator,
-            **expected_values
-        )
+        self.delete(condition=condition)
         for attr, value in self.get_s3_backed_attr_mapper().items():
             # check if the s3 object exists, if exists, delete it
             try:
