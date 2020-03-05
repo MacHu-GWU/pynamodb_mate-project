@@ -1,1 +1,2 @@
 pynamodb
+# windtalker==0.0.7 is optional for client side encrypted attribute
