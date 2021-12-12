@@ -1,56 +1,53 @@
 # -*- coding: utf-8 -*-
+
+import gzip
 import typing
 
 from pynamodb.attributes import (
     UnicodeAttribute,
-    Optional, Union, _T, Callable, Any
 )
 from ..helpers import (
-    sha256, join_s3_uri, split_s3_uri
+    sha256, join_s3_uri, split_s3_uri, is_s3_object_exists
 )
+
 
 
 class S3BackedAttribute(UnicodeAttribute):
-    def __init__(
-        self,
-        hash_key: bool = False,
-        range_key: bool = False,
-        null: Optional[bool] = None,
-        default: Optional[Union[_T, Callable[..., _T]]] = None,
-        default_for_new: Optional[Union[Any, Callable[..., _T]]] = None,
-        attr_name: Optional[str] = None,
-        bucket_name: str = None,
-        s3_client=None,
-    ):
-        super().__init__(
-            hash_key=hash_key,
-            range_key=range_key,
-            null=null,
-            default=default,
-            default_for_new=default_for_new,
-            attr_name=attr_name,
-        )
-        if bucket_name is None:
-            raise ValueError
-        self.bucket_name = bucket_name
-        self.s3_client = s3_client
+    """
+    **中文文档**
 
-    def get_s3_key(self, fingerprint):
-        return "pynamodb-mate/bigbinary/{}.dat".format(fingerprint)
+    没有办法从 Attribute 对象中访问到上级的 Model 对象.
+    """
+    bucket_name = None
+    s3_client = None
 
+    _is_s3_backed = True
+
+    def get_s3_key(self, fingerprint: str) -> str:
+        raise NotImplementedError
+
+    def get_fingerprint(self, value: typing.Union[str, bytes]) -> str:
+        raise NotImplementedError
+
+
+S3KEY_BIGBINARY = "pynamodb-mate/bigbinary/{}.dat"
+S3KEY_BIGTEXT = "pynamodb-mate/bigtext/{}.txt"
 
 class S3BackedBigBinaryAttribute(S3BackedAttribute):
+    def get_s3_key(self, fingerprint: str) -> str:
+        return S3KEY_BIGBINARY.format(fingerprint)
+
     def serialize(self, value: bytes) -> str:
-        print(self.__class__)
         fingerprint = sha256(value)
         s3_bucket = self.bucket_name
         s3_key = self.get_s3_key(fingerprint)
         s3_uri = join_s3_uri(s3_bucket, s3_key)
-        self.s3_client.put_object(
-            Bucket=s3_bucket,
-            Key=s3_key,
-            Body=value,
-        )
+        if not is_s3_object_exists(self.s3_client, s3_bucket, s3_key):
+            self.s3_client.put_object(
+                Bucket=s3_bucket,
+                Key=s3_key,
+                Body=gzip.compress(value),
+            )
         return s3_uri
 
     def deserialize(self, value: str) -> bytes:
@@ -59,21 +56,25 @@ class S3BackedBigBinaryAttribute(S3BackedAttribute):
             Bucket=s3_bucket,
             Key=s3_key
         )
-        binary_data = res["Body"].read()
-        return binary_data
+        return gzip.decompress(res["Body"].read())
 
 
 class S3BackedBigTextAttribute(S3BackedAttribute):
+    def get_s3_key(self, fingerprint: str) -> str:
+        return S3KEY_BIGTEXT.format(fingerprint)
+
     def serialize(self, value: str) -> str:
-        fingerprint = sha256(value.encode("utf-8"))
+        b_value = value.encode("utf-8")
+        fingerprint = sha256(b_value)
         s3_bucket = self.bucket_name
         s3_key = self.get_s3_key(fingerprint)
         s3_uri = join_s3_uri(s3_bucket, s3_key)
-        self.s3_client.put_object(
-            Bucket=s3_bucket,
-            Key=s3_key,
-            Body=value,
-        )
+        if not is_s3_object_exists(self.s3_client, s3_bucket, s3_key):
+            self.s3_client.put_object(
+                Bucket=s3_bucket,
+                Key=s3_key,
+                Body=gzip.compress(b_value),
+            )
         return s3_uri
 
     def deserialize(self, value: str) -> str:
@@ -82,5 +83,4 @@ class S3BackedBigTextAttribute(S3BackedAttribute):
             Bucket=s3_bucket,
             Key=s3_key
         )
-        text_data = res["Body"].read().decode("utf-8")
-        return text_data
+        return gzip.decompress(res["Body"].read()).decode("utf-8")

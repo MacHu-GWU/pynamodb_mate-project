@@ -36,12 +36,9 @@ class SymmetricEncryptedAttribute(object):
                 self._cipher = AesEcbCipher(key=self.key)
             elif self.determinative is False:
                 self._cipher = AesCtrCipher(key=self.key)
-            else:
+            else:  # pragma: no cover
                 raise ValueError
         return self._cipher
-
-    def __eq__(self, other):
-        return super().__eq__(self.serialize(other))
 
 
 class EncryptUnicodeAttribute(BinaryAttribute, SymmetricEncryptedAttribute):

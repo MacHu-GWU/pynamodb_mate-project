@@ -3,11 +3,8 @@
 [run]
 omit =
     pynamodb_mate/_version.py
-    pynamodb_mate/cli.py
-    pynamodb_mate/pkg/*
     pynamodb_mate/docs/*
     pynamodb_mate/tests/*
-    pynamodb_mate/handlers/*
 
 [report]
 # Regexes for lines to exclude from consideration

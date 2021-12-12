@@ -1,4 +1,3 @@
 # dependencies for test
 pytest                              # test framework
 pytest-cov                          # coverage test
-#windtalker==0.0.8                  # encryption

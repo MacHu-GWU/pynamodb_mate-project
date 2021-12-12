@@ -22,9 +22,13 @@ try:
         S3BackedBigBinaryAttribute,
         S3BackedBigTextAttribute,
     )
-except ImportError:
+    from .attributes.compressed import (
+        CompressedJSONAttribute,
+    )
+    from .models import Model
+except ImportError as e:  # pragma: no cover
     pass
-except:
+except: # pragma: no cover
     raise
 
 
@@ -32,9 +36,6 @@ try:
     from pynamodb.constants import (
         PAY_PER_REQUEST_BILLING_MODE,
         PROVISIONED_BILLING_MODE,
-    )
-    from pynamodb.models import (
-        Model,
     )
     from pynamodb.attributes import (
         UnicodeAttribute,
@@ -50,7 +51,7 @@ try:
         JSONAttribute,
         UTCDateTimeAttribute,
     )
-except ImportError as e:
-    print(e)
-except:
+except ImportError as e: # pragma: no cover
+    pass
+except: # pragma: no cover
     raise
