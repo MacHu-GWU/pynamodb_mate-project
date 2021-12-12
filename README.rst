@@ -2,12 +2,6 @@
     :target: https://pynamodb_mate.readthedocs.io/index.html
     :alt: Documentation Status
 
-.. image:: https://travis-ci.org/MacHu-GWU/pynamodb_mate-project.svg?branch=master
-    :target: https://travis-ci.org/MacHu-GWU/pynamodb_mate-project?branch=master
-
-.. image:: https://codecov.io/gh/MacHu-GWU/pynamodb_mate-project/branch/master/graph/badge.svg
-  :target: https://codecov.io/gh/MacHu-GWU/pynamodb_mate-project
-
 .. image:: https://img.shields.io/pypi/v/pynamodb_mate.svg
     :target: https://pypi.python.org/pypi/pynamodb_mate
 
@@ -51,6 +45,7 @@
 Welcome to ``pynamodb_mate`` Documentation
 ==============================================================================
 
+- Full Documentation is Here
 
 Feature1. Store Large Binary Object in S3, only store S3 URI in DynamoDB
 ------------------------------------------------------------------------------

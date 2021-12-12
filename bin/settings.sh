@@ -17,10 +17,8 @@ py_ver_major="3"
 py_ver_minor="8"
 py_ver_micro="11"
 use_pyenv="N" # "Y" or "N"
-supported_py_versions="3.8.11" # e.g: "2.7.13 3.6.2"
+supported_py_versions="3.7.12 3.8.11 3.9.6" # e.g: "2.7.13 3.6.2"
 
 
 #--- Doc Build
 rtd_project_name="pynamodb_mate"
-
-
