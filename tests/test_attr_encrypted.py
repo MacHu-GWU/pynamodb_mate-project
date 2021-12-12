@@ -1,48 +1,37 @@
 # -*- coding: utf-8 -*-
 
-import os
-
 import pytest
-from pynamodb.attributes import UnicodeAttribute
-from pynamodb.models import Model
-
-from pynamodb_mate.encrypt_attribute import (
-    EncryptUnicodeAttribute,
-    EncryptBinaryAttribute,
-    EncryptedNumberAttribute,
-    EncryptedJsonAttribute,
-)
-
-AWS_PROFILE = "pynamodb_mate"
-os.environ["AWS_DEFAULT_PROFILE"] = AWS_PROFILE
+import pynamodb_mate
+from pynamodb_mate.tests import py_ver
 
 PASSWORD = "my-password"
 
 
-class ArchiveModel(Model):
+class ArchiveModel(pynamodb_mate.Model):
     class Meta:
-        table_name = "pynamodb_mate-archive"
+        table_name = f"pynamodb-mate-test-archive-{py_ver}"
         region = "us-east-1"
+        billing_mode = pynamodb_mate.PAY_PER_REQUEST_BILLING_MODE
 
-    aid = UnicodeAttribute(hash_key=True)
-    secret_message = EncryptUnicodeAttribute()
+    aid = pynamodb_mate.UnicodeAttribute(hash_key=True)
+    secret_message = pynamodb_mate.EncryptUnicodeAttribute()
     secret_message.encrypt_key = PASSWORD
 
-    secret_binary = EncryptBinaryAttribute()
+    secret_binary = pynamodb_mate.EncryptBinaryAttribute()
     secret_binary.encrypt_key = PASSWORD
 
-    secret_integer = EncryptedNumberAttribute()
+    secret_integer = pynamodb_mate.EncryptedNumberAttribute()
     secret_integer.encrypt_key = PASSWORD
 
-    secret_float = EncryptedNumberAttribute()
+    secret_float = pynamodb_mate.EncryptedNumberAttribute()
     secret_float.encrypt_key = PASSWORD
 
-    secret_data = EncryptedJsonAttribute()
+    secret_data = pynamodb_mate.EncryptedJsonAttribute()
     secret_data.encrypt_key = PASSWORD
 
 
-def setup_module(object):
-    ArchiveModel.create_table(read_capacity_units=5, write_capacity_units=5)
+def setup_module(module):
+    ArchiveModel.create_table(wait=True)
 
 
 class TestEncryptUnicode(object):
@@ -63,6 +52,17 @@ class TestEncryptUnicode(object):
         assert model.secret_integer == 1234
         assert model.secret_float == 3.14
         assert model.secret_data == {"Alice": 1, "Bob": 2, "Cathy": 3}
+
+        # print(ArchiveModel.scan(ArchiveModel.secret_message == "attack at 2PM tomorrow").total_count)
+        # filter_condition = \
+        #     ArchiveModel.secret_message == "attack at 2PM tomorrow!"
+        # ArchiveModel.aid == "aid-001"
+        # print(filter_condition)
+        # for model in ArchiveModel.scan(filter_condition):
+        #     print(model)
+
+        # print(ArchiveModel.aid == "aid-001")
+        # print(ArchiveModel.secret_message == "attack at 2PM tomorrow")
 
 
 if __name__ == "__main__":

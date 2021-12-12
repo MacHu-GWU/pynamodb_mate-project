@@ -1,3 +1,2 @@
 pynamodb
-# windtalker==0.0.8 is optional for client side encrypted attribute
-boto3
+pycryptodome

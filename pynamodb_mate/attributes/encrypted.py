@@ -6,7 +6,6 @@ Json data.
 """
 
 from json import loads as json_loads, dumps as json_dumps
-
 from pynamodb.attributes import UnicodeAttribute, BinaryAttribute
 from windtalker import SymmetricCipher
 
@@ -29,10 +28,15 @@ class SymmetricEncryptedAttribute(object):
 
 class EncryptUnicodeAttribute(UnicodeAttribute, SymmetricEncryptedAttribute):
     def serialize(self, value):
+        print(self.get_cipher().encrypt_text(value))
+        print(self.get_cipher().encrypt_text(value))
         return self.get_cipher().encrypt_text(value)
 
     def deserialize(self, value):
         return self.get_cipher().decrypt_text(value)
+
+    def __eq__(self, other):
+        return super().__eq__(self.get_cipher().encrypt_text(other))
 
 
 class EncryptBinaryAttribute(BinaryAttribute, SymmetricEncryptedAttribute):
@@ -52,4 +56,8 @@ class EncryptedNumberAttribute(UnicodeAttribute, SymmetricEncryptedAttribute):
 
 
 class EncryptedJsonAttribute(EncryptedNumberAttribute):
-    pass
+    def serialize(self, value):
+        return self.get_cipher().encrypt_text(json_dumps(value))
+
+    def deserialize(self, value):
+        return json_loads(self.get_cipher().decrypt_text(value))

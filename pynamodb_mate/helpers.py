@@ -5,16 +5,16 @@ import base64
 import hashlib
 
 
-def bytes_to_base64str(b: bytes) -> str:
+def bytes_to_base85str(b: bytes) -> str:
     """
     """
-    return base64.b64encode(b).decode("utf-8")
+    return base64.b85encode(b).decode("utf-8")
 
 
-def base64str_to_bytes(s: str) -> bytes:
+def base85str_to_bytes(s: str) -> bytes:
     """
     """
-    return base64.b64decode(s.encode("utf-8"))
+    return base64.b85decode(s.encode("utf-8"))
 
 
 def sha256(b: bytes) -> str:

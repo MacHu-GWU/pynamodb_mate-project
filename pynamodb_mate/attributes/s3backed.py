@@ -2,11 +2,9 @@
 import typing
 
 from pynamodb.attributes import (
-    UnicodeAttribute, BinaryAttribute,
+    UnicodeAttribute,
     Optional, Union, _T, Callable, Any
 )
-from pynamodb.connection import Connection
-from pynamodb.models import Model
 from ..helpers import (
     sha256, join_s3_uri, split_s3_uri
 )
@@ -41,7 +39,7 @@ class S3BackedAttribute(UnicodeAttribute):
         return "pynamodb-mate/bigbinary/{}.dat".format(fingerprint)
 
 
-class BigBinaryAttribute(S3BackedAttribute):
+class S3BackedBigBinaryAttribute(S3BackedAttribute):
     def serialize(self, value: bytes) -> str:
         print(self.__class__)
         fingerprint = sha256(value)
@@ -65,7 +63,7 @@ class BigBinaryAttribute(S3BackedAttribute):
         return binary_data
 
 
-class BigTextAttribute(S3BackedAttribute):
+class S3BackedBigTextAttribute(S3BackedAttribute):
     def serialize(self, value: str) -> str:
         fingerprint = sha256(value.encode("utf-8"))
         s3_bucket = self.bucket_name
