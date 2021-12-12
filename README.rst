@@ -1,5 +1,5 @@
 .. image:: https://readthedocs.org/projects/pynamodb_mate/badge/?version=latest
-    :target: https://pynamodb_mate.readthedocs.io/index.html
+    :target: https://pynamodb_mate.readthedocs.io/
     :alt: Documentation Status
 
 .. image:: https://img.shields.io/pypi/v/pynamodb_mate.svg
@@ -18,7 +18,7 @@
 
 
 .. image:: https://img.shields.io/badge/Link-Document-blue.svg
-      :target: https://pynamodb_mate.readthedocs.io/index.html
+      :target: https://pynamodb_mate.readthedocs.io/
 
 .. image:: https://img.shields.io/badge/Link-API-blue.svg
       :target: https://pynamodb_mate.readthedocs.io/py-modindex.html
@@ -45,7 +45,7 @@
 Welcome to ``pynamodb_mate`` Documentation
 ==============================================================================
 
-- `Full Documentation is Here <https://pynamodb-mate.readthedocs.io/en/latest/>`_
+- `Full Documentation is Here <https://pynamodb_mate.readthedocs.io/>`_
 
 .. contents::
     :class: this-will-duplicate-information-and-it-is-still-useful-here
