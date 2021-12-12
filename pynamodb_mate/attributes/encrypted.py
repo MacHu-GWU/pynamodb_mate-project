@@ -5,59 +5,68 @@ Implement Client Side Encryption Attribute for Unicode, Binary, Numbers and
 Json data.
 """
 
+import json
+import typing
 from json import loads as json_loads, dumps as json_dumps
 from pynamodb.attributes import UnicodeAttribute, BinaryAttribute
-from windtalker import SymmetricCipher
+from ..cipher import str_to_key, BaseCipher, AesEcbCipher, AesCtrCipher
 
 
 class SymmetricEncryptedAttribute(object):
-    encrypt_key = None  # type: str
-    _cipher = None  # type: SymmetricCipher
+    encryption_key = None  # type: str
+    determinative = None  # type: str
 
-    def get_cipher(self):
+    _key = None  # type: bytes
+
+    @property
+    def key(self) -> bytes:
+        if self._key is None:
+            self._key = str_to_key(self.encryption_key)
+        return self._key
+
+    _cipher = None  # type: BaseCipher
+
+    @property
+    def cipher(self) -> BaseCipher:
         """
         :rtype: SymmtricCipher
         """
         if self._cipher is None:
-            if self.encrypt_key:
-                self._cipher = SymmetricCipher(password=self.encrypt_key)
+            if self.determinative is True:
+                self._cipher = AesEcbCipher(key=self.key)
+            elif self.determinative is False:
+                self._cipher = AesCtrCipher(key=self.key)
             else:
-                raise Exception
+                raise ValueError
         return self._cipher
 
-
-class EncryptUnicodeAttribute(UnicodeAttribute, SymmetricEncryptedAttribute):
-    def serialize(self, value):
-        print(self.get_cipher().encrypt_text(value))
-        print(self.get_cipher().encrypt_text(value))
-        return self.get_cipher().encrypt_text(value)
-
-    def deserialize(self, value):
-        return self.get_cipher().decrypt_text(value)
-
     def __eq__(self, other):
-        return super().__eq__(self.get_cipher().encrypt_text(other))
+        return super().__eq__(self.serialize(other))
+
+
+class EncryptUnicodeAttribute(BinaryAttribute, SymmetricEncryptedAttribute):
+    def serialize(self, value: str) -> bytes:
+        return self.cipher.encrypt(value.encode("utf-8"))
+
+    def deserialize(self, value: bytes) -> str:
+        return self.cipher.decrypt(value).decode("utf-8")
 
 
 class EncryptBinaryAttribute(BinaryAttribute, SymmetricEncryptedAttribute):
-    def serialize(self, value):
-        return self.get_cipher().encrypt_binary(value)
+    def serialize(self, value: bytes) -> bytes:
+        return self.cipher.encrypt(value)
 
-    def deserialize(self, value):
-        return self.get_cipher().decrypt_binary(value)
+    def deserialize(self, value: bytes) -> bytes:
+        return self.cipher.decrypt(value)
 
 
-class EncryptedNumberAttribute(UnicodeAttribute, SymmetricEncryptedAttribute):
-    def serialize(self, value):
-        return self.get_cipher().encrypt_text(json_dumps(value))
+class EncryptedNumberAttribute(BinaryAttribute, SymmetricEncryptedAttribute):
+    def serialize(self, value: typing.Union[int, float]) -> bytes:
+        return self.cipher.encrypt(json.dumps(value).encode("ascii"))
 
-    def deserialize(self, value):
-        return json_loads(self.get_cipher().decrypt_text(value))
+    def deserialize(self, value: bytes) -> typing.Union[int, float]:
+        return json.loads(self.cipher.decrypt(value).decode("ascii"))
 
 
 class EncryptedJsonAttribute(EncryptedNumberAttribute):
-    def serialize(self, value):
-        return self.get_cipher().encrypt_text(json_dumps(value))
-
-    def deserialize(self, value):
-        return json_loads(self.get_cipher().decrypt_text(value))
+    pass

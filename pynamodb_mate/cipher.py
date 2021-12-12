@@ -13,9 +13,21 @@ def str_to_key(s: str) -> bytes:
     return m.digest()
 
 
-class AESECBCipher:
-    def __init__(self, key: str):
-        self._key = str_to_key(key)
+class BaseCipher:
+    def encrypt(self, b: bytes) -> bytes: # pragma: no cover
+        raise NotImplementedError
+
+    def decrypt(self, b: bytes) -> bytes: # pragma: no cover
+        raise NotImplementedError
+
+
+class AesEcbCipher(BaseCipher):
+    """
+    A determinative symmetric cipher. same input + same key = same output.
+    """
+
+    def __init__(self, key: bytes):
+        self._key = key
         self._aes = AES.new(self._key, AES.MODE_ECB)
 
     def encrypt(self, b: bytes) -> bytes:
@@ -25,9 +37,13 @@ class AESECBCipher:
         return unpad(self._aes.decrypt(b), AES.block_size)
 
 
-class AESCTRCipher:
-    def __init__(self, key: str):
-        self._key = str_to_key(key)
+class AesCtrCipher(BaseCipher):
+    """
+    A non-determinative symmetric cipher. same input + same key != same output.
+    """
+
+    def __init__(self, key: bytes):
+        self._key = key
 
     def encrypt(self, b: bytes) -> bytes:
         aes = AES.new(self._key, AES.MODE_CTR)

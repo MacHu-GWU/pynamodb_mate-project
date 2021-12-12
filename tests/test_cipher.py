@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-from pynamodb_mate.cipher import AESECBCipher, AESCTRCipher
+from pynamodb_mate.cipher import str_to_key, AesEcbCipher, AesCtrCipher
 
-KEY = "mypassword"
+KEY = str_to_key("mypassword")
 
 
 class TestAESECBCipher:
     def test(self):
-        cipher = AESECBCipher(KEY)
+        cipher = AesEcbCipher(KEY)
         b = ("hello" * 1000).encode("utf-8")
         b1 = cipher.encrypt(b)
         b2 = cipher.encrypt(b)
@@ -19,7 +19,7 @@ class TestAESECBCipher:
 
 class TestAESCTRCipher:
     def test(self):
-        cipher = AESCTRCipher(KEY)
+        cipher = AesCtrCipher(KEY)
         b = ("hello" * 1000).encode("utf-8")
         b1 = cipher.encrypt(b)
         b2 = cipher.encrypt(b)

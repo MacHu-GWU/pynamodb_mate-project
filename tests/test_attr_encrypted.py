@@ -4,7 +4,7 @@ import pytest
 import pynamodb_mate
 from pynamodb_mate.tests import py_ver
 
-PASSWORD = "my-password"
+ENCRYPTION_KEY = "my-password"
 
 
 class ArchiveModel(pynamodb_mate.Model):
@@ -15,54 +15,72 @@ class ArchiveModel(pynamodb_mate.Model):
 
     aid = pynamodb_mate.UnicodeAttribute(hash_key=True)
     secret_message = pynamodb_mate.EncryptUnicodeAttribute()
-    secret_message.encrypt_key = PASSWORD
+    secret_message.encryption_key = ENCRYPTION_KEY
+    secret_message.determinative = True
 
     secret_binary = pynamodb_mate.EncryptBinaryAttribute()
-    secret_binary.encrypt_key = PASSWORD
+    secret_binary.encryption_key = ENCRYPTION_KEY
+    secret_binary.determinative = False
 
     secret_integer = pynamodb_mate.EncryptedNumberAttribute()
-    secret_integer.encrypt_key = PASSWORD
+    secret_integer.encryption_key = ENCRYPTION_KEY
+    secret_integer.determinative = True
 
     secret_float = pynamodb_mate.EncryptedNumberAttribute()
-    secret_float.encrypt_key = PASSWORD
+    secret_float.encryption_key = ENCRYPTION_KEY
+    secret_float.determinative = False
 
     secret_data = pynamodb_mate.EncryptedJsonAttribute()
-    secret_data.encrypt_key = PASSWORD
+    secret_data.encryption_key = ENCRYPTION_KEY
+    secret_data.determinative = False
 
 
 def setup_module(module):
     ArchiveModel.create_table(wait=True)
 
 
+def count_result(result):
+    for i in result:
+        pass
+    return result.total_count
+
+
 class TestEncryptUnicode(object):
     def test(self):
+        # Test encryption / decryption
+        msg = "attack at 2PM tomorrow!"
+        binary = "a secret image".encode("utf-8")
+        data = {"Alice": 1, "Bob": 2, "Cathy": 3}
         model = ArchiveModel(
             aid="aid-001",
-            secret_message="attack at 2PM tomorrow!",
-            secret_binary="a secret image".encode("utf-8"),
+            secret_message=msg,
+            secret_binary=binary,
             secret_integer=1234,
             secret_float=3.14,
-            secret_data={"Alice": 1, "Bob": 2, "Cathy": 3},
+            secret_data=data,
         )
         model.save()
 
         model = ArchiveModel.get("aid-001")
-        assert model.secret_message == "attack at 2PM tomorrow!"
-        assert model.secret_binary.decode("utf-8") == "a secret image"
+        assert model.secret_message == msg
+        assert model.secret_binary == binary
         assert model.secret_integer == 1234
-        assert model.secret_float == 3.14
-        assert model.secret_data == {"Alice": 1, "Bob": 2, "Cathy": 3}
+        assert model.secret_float == pytest.approx(3.14)
+        assert model.secret_data == data
 
-        # print(ArchiveModel.scan(ArchiveModel.secret_message == "attack at 2PM tomorrow").total_count)
-        # filter_condition = \
-        #     ArchiveModel.secret_message == "attack at 2PM tomorrow!"
-        # ArchiveModel.aid == "aid-001"
-        # print(filter_condition)
-        # for model in ArchiveModel.scan(filter_condition):
-        #     print(model)
+        # equal filter on encrypted field
+        assert count_result(
+            ArchiveModel.scan(ArchiveModel.secret_message == msg)
+        ) == 1
+        assert count_result(
+            ArchiveModel.scan(ArchiveModel.secret_message == "hold the fire now!")
+        ) == 0
 
-        # print(ArchiveModel.aid == "aid-001")
-        # print(ArchiveModel.secret_message == "attack at 2PM tomorrow")
+        # for non-determinative field, same input and same output
+        # doesn't return same output
+        assert count_result(
+            ArchiveModel.scan(ArchiveModel.secret_binary == binary)
+        ) == 0
 
 
 if __name__ == "__main__":
