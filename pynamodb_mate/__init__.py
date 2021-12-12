@@ -24,6 +24,8 @@ try:
     )
     from .attributes.compressed import (
         CompressedJSONAttribute,
+        CompressedUnicodeAttribute,
+        CompressedBinaryAttribute,
     )
     from .models import Model
 except ImportError as e:  # pragma: no cover

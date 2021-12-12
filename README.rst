@@ -45,85 +45,248 @@
 Welcome to ``pynamodb_mate`` Documentation
 ==============================================================================
 
-- Full Documentation is Here
+- `Full Documentation is Here <https://pynamodb-mate.readthedocs.io/en/latest/>`_
 
-Feature1. Store Large Binary Object in S3, only store S3 URI in DynamoDB
+.. contents::
+    :class: this-will-duplicate-information-and-it-is-still-useful-here
+    :depth: 1
+    :local:
+
+
+Overview
 ------------------------------------------------------------------------------
 
-DynamoDB is a very good choice for **Pay-as-you-go**, **high-concurrent** key value database. Somestimes, you want to store large binary object along with Dynamodb items. Especially, in web crawler app. But Dynamodb has a limitation that one item can not be larger than 250KB. How could you solve the problem?
+``pynamodb_mate`` provides advanced best practice using DynamoDB in python. Built on top of `pynamodb <https://pynamodb.readthedocs.io/en/latest/>`_ python library.
+
+
+Feature1. Store Large Object in Dynamodb
+------------------------------------------------------------------------------
+DynamoDB is a very good choice for **Pay-as-you-go**, **high-concurrent** key value database. Sometimes, you want to store large binary object as a Dynamodb item attribute. For example, a web crawler app wants to store crawled html source to avoid re-visit the same url. But Dynamodb has a limitation that one item can not be larger than 256KB. How could you solve the problem?
 
 A easy solution is to store large binary object in s3, and only store the s3 uri in Dynamodb. ``pynamodb_mate`` library provides this feature on top of ``pynamodb`` project (A DynamoDB ORM layer in Python).
 
-Here's how you define your ORM layer:
+**1. Define your Data Model**
 
 .. code-block:: python
 
-    from pynamodb.models import Model
-    from pynamodb.attributes import UnicodeAttribute
-    from pynamodb_mate.s3_backed_attribute import (
-        S3BackedBinaryAttribute,
-        S3BackedUnicodeAttribute,
-        S3BackedMixin,
-        s3_key_safe_b64encode,
-    )
+    import pynamodb_mate
+    import botocore.session
 
-    BUCKET_NAME = "my-bucket"
-    URI_PREFIX = "s3://{BUCKET_NAME}/".format(BUCKET_NAME=BUCKET_NAME)
+    # Declare the data Model
 
-    class PageModel(Model, S3BackedMixin):
+    # create s3 client, will be used to store big binary / text data in S3
+    boto_ses = botocore.session.get_session()
+    s3_client = boto_ses.create_client("s3")
+
+    class UrlModel(pynamodb_mate.Model):
         class Meta:
-            table_name = "pynamodb_mate-pages"
+            table_name = "urls"
             region = "us-east-1"
+            # use Pay as you go model for testing
+            billing_mode = pynamodb_mate.PAY_PER_REQUEST_BILLING_MODE
 
-        url = UnicodeAttribute(hash_key=True)
-        cover_image_url = UnicodeAttribute(null=True)
+        url = pynamodb_mate.UnicodeAttribute(hash_key=True)
 
-        # this field is for html content string
-        html_content = S3BackedUnicodeAttribute(
-            s3_uri_getter=lambda obj: URI_PREFIX + s3_key_safe_b64encode(obj.url) + ".html",
-            compress=True,
-        )
-        # this field is for image binary content
-        cover_image_content = S3BackedBinaryAttribute(
-            s3_uri_getter=lambda obj: URI_PREFIX + s3_key_safe_b64encode(obj.cover_image_url) + ".jpg",
-            compress=True,
-        )
+        html = pynamodb_mate.S3BackedBigTextAttribute()
+        html.bucket_name = "my-bucket"  # s3 bucket name
+        html.s3_client = s3_client  # s3 client object
 
-Here's how you store large binary to s3:
+        content = pynamodb_mate.S3BackedBigBinaryAttribute()
+        content.bucket_name = "my-bucket"
+        content.s3_client = s3_client
+
+    # create dynamodb table if not exists, quick skip if already exists
+    UrlModel.create_table(wait=True)
+
+**2. Write / Read / Update / Delete**
 
 .. code-block:: python
 
-    url = "http://www.python.org"
-    url_cover_image = "http://www.python.org/logo.jpg"
+    url = "https://pynamodb-mate.readthedocs.io/en/latest/"
+    html = "<html>Hello World!</html>\n" * 1000
+    content = ("this is a dummy image!\n" * 1000).encode("utf-8")
 
-    html_content = "Hello World!\n" * 1000
-    cover_image_content = ("this is a dummy image!\n" * 1000).encode("utf-8")
+    # create item
+    url = UrlModel(url=url, html=html, content=content)
 
-    page = PageModel(url=url, cover_image_url=url_cover_image)
+    # write item to dynamodb table
+    url.save()
 
-    # create, if something wrong with s3.put_object in the middle,
-    # dirty s3 object will be cleaned up
-    page.atomic_save(
-        s3_backed_data=[
-            page.html_content.set_to(html_content),
-            page.cover_image_content.set_to(cover_image_content)
+    # get the item
+    url = UrlModel.get(url)
+    assert url.html == html
+    assert url.content == content
+
+    # update the item
+    url.update(
+        actions=[
+            UrlModel.html.set("<html>Hello Dynamodb</html>"),
+            UrlModel.content.set("this is a real image!".encode("utf-8")),
         ]
     )
+    url.refresh() # get the up-to-date data
+    print(url.html) # should give you new data
+    print(url.content) # should give you new data
 
-    # update, if something wrong with s3.put_object in the middle,
-    # partially done new s3 object will be roll back
-    html_content_new = "Good Bye!\n" * 1000
-    cover_image_content_new = ("this is another dummy image!\n" * 1000).encode("utf-8")
+    # delete item from dynamodb, DON'T DELETE S3 OBJECT
+    url.delete()
 
-    page.atomic_update(
-        s3_backed_data=[
-            page.html_content.set_to(html_content_new),
-            page.cover_image_content.set_to(cover_image_content_new),
-        ]
+**3. How it Works**
+
+In this example, you can pass the raw html to ``url = UrlModel(html="<html>big HTML ...</html>", ...)`` attribute. When writing this item to Dynamodb, it automatically use the sha256 fingerprint of the data in S3 key naming convention, stores the S3 uri to the ``html`` field, and store the html content to S3 object. In other words, same data will be stored at the same S3 location to avoid duplicate traffic. However, it won't delete the S3 object because there might be another item are using the same S3 object.
+
+
+Feature2. Client Side Encryption
+------------------------------------------------------------------------------
+Dynamodb support encryption at the rest (Server Side Encryption) and use SSL to encryption the transit data (Encrypt at the fly) by default. But you need to spend additional work to enable "Client Side Encryption". ``pynamodb_mate`` made it deadly easy.
+
+**1. Define attribute to use Client Side Encryption (AES)**
+
+.. code-block:: python
+
+    import pynamodb_mate
+
+    ENCRYPTION_KEY = "my-password"
+
+    class ArchiveModel(pynamodb_mate.Model):
+        class Meta:
+            table_name = f"archive"
+            region = "us-east-1"
+            billing_mode = pynamodb_mate.PAY_PER_REQUEST_BILLING_MODE
+
+        aid = pynamodb_mate.UnicodeAttribute(hash_key=True)
+
+        secret_message = pynamodb_mate.EncryptUnicodeAttribute()
+        # the per field level encryption key
+        secret_message.encryption_key = ENCRYPTION_KEY
+        # if True, same input -> same output
+        # so you can still use this field for query
+        # ``filter_conditions=(ArchiveModel.secret_message == "my message")``
+        secret_message.determinative = True
+
+        secret_binary = pynamodb_mate.EncryptBinaryAttribute()
+        secret_binary.encryption_key = ENCRYPTION_KEY
+        # if True, same input -> random output, but will return same output
+        # but you lose the capability of query on this field
+        secret_binary.determinative = False
+
+        secret_integer = pynamodb_mate.EncryptedNumberAttribute()
+        secret_integer.encryption_key = ENCRYPTION_KEY
+        secret_integer.determinative = True
+
+        secret_float = pynamodb_mate.EncryptedNumberAttribute()
+        secret_float.encryption_key = ENCRYPTION_KEY
+        secret_float.determinative = False
+
+        secret_data = pynamodb_mate.EncryptedJsonAttribute()
+        secret_data.encryption_key = ENCRYPTION_KEY
+        secret_data.determinative = False
+
+    # create dynamodb table if not exists, quick skip if already exists
+    ArchiveModel.create_table(wait=True)
+
+**2. Write / Read the Item**
+
+.. code-block:: python
+
+    msg = "attack at 2PM tomorrow!"
+    binary = "a secret image".encode("utf-8")
+    data = {"Alice": 1, "Bob": 2, "Cathy": 3}
+
+    model = ArchiveModel(
+        aid="aid-001",
+        secret_message=msg,
+        secret_binary=binary,
+        secret_integer=1234,
+        secret_float=3.14,
+        secret_data=data,
     )
+    model.save()
 
-    # delete, make sure s3 object are all gone
-    page.atomic_delete()
+    model = ArchiveModel.get("aid-001")
+    assert model.secret_message == msg
+    assert model.secret_binary == binary
+    assert model.secret_integer == 1234
+    assert model.secret_float == pytest.approx(3.14)
+    assert model.secret_data == data
+
+**3. How it works**
+
+Internally it always use binary for data serialization / deserialization. It convert the original data to binary, encrypt it with the key, and store it to DynamoDB. It read the data from DynamoDB, decrypt it and convert it back to original data to user.
+
+For field that you still want to be able to query on it, you use ``determinative = True``. And it uses AES ECB. It is approved that not secure for middle man attack. But you can still use it with DynamoDB because DynamoDB api use SSL to encrypt it in transit. For ``determinative = False``, it uses AES CTR.
+
+
+Feature3. Compressed Attribute
+------------------------------------------------------------------------------
+Sometimes you want to compress the data before store to save DB space. For example, in a E-commerce data model, an order has many items like this: ``[{"item_name": "apple", "item_count": 12}, {"item_name": "banana", "item_count": 5}]``. There are lots of repeated information such as the keys ``"item_name"`` and ``"item_count"``.
+
+**1. Define attribute to use Auto Compressed**
+
+.. code-block:: python
+
+    import pynamodb_mate
+
+    # Define the Data Model to use compressed attribute
+    class OrderModel(pynamodb_mate.Model):
+        class Meta:
+            table_name = f"orders"
+            region = "us-east-1"
+            billing_mode = pynamodb_mate.PAY_PER_REQUEST_BILLING_MODE
+
+        order_id = pynamodb_mate.UnicodeAttribute(hash_key=True)
+
+        # original value is unicode str
+        description = pynamodb_mate.CompressedUnicodeAttribute(null=True)
+
+        # original value is binary bytes
+        image = pynamodb_mate.CompressedBinaryAttribute(null=True)
+
+        # original value is any json serializable object
+        items = pynamodb_mate.CompressedJSONAttribute(null=True)
+
+    OrderModel.create_table(wait=True)
+
+**2. Write / Read the Item**
+
+.. code-block:: python
+
+    # Create an item
+    order_id = "order_001"
+    description = "a fancy order!" * 10
+    image = description.encode("utf-8") # a fake binary object
+    items = [
+        {
+            "item_id": "i_001",
+            "item_name": "apple",
+            "item_price": 2.4,
+            "quantity": 8,
+        },
+        {
+            "item_id": "i_002",
+            "item_name": "banana",
+            "item_price": 0.53,
+            "quantity": 5,
+        },
+    ]
+    order = OrderModel(
+        order_id=order_id,
+        description=description,
+        image=image,
+        items=items,
+    )
+    # Save item to Dynamodb
+    order.save()
+
+    # Get the value back and verify
+    order = OrderModel.get(order_id)
+    assert order.description == description
+    assert order.image == image
+    assert order.items == items
+
+**3. How it works**
+
+Internally it always use binary for data serialization / deserialization. It convert the original data to binary, and compress it before saving to Dynamodb. It read the data from DynamoDB, decompress it and convert it back to original data to user.
 
 
 .. _install:
