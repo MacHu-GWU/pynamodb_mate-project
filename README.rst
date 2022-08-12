@@ -289,6 +289,18 @@ Sometimes you want to compress the data before store to save DB space. For examp
 Internally it always use binary for data serialization / deserialization. It convert the original data to binary, and compress it before saving to Dynamodb. It read the data from DynamoDB, decompress it and convert it back to original data to user.
 
 
+Feature4. AWS Dynamodb Console
+------------------------------------------------------------------------------
+You can use the following methods to create a URL that can preview your table and items in your browser. This could be very helpful with logging.
+
+.. code-block:: python
+
+
+        print(Model.get_table_overview_console_url())
+        print(Model.get_table_items_console_url())
+        print(Model(the_hash_key="a", the_range_key=1).item_detail_console_url)
+
+
 .. _install:
 
 Install
