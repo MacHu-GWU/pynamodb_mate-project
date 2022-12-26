@@ -13,3 +13,6 @@ docfly==1.0.2                           # sphinx-doc automation
 
 # Theme
 furo==2021.8.31                         # modern doc theme
+
+# extra
+pycryptodome

@@ -12,12 +12,6 @@ __maintainer_email__ = __author_email__
 
 
 try:
-    from .attributes.encrypted import (
-        EncryptedNumberAttribute,
-        EncryptUnicodeAttribute,
-        EncryptBinaryAttribute,
-        EncryptedJsonAttribute,
-    )
     from .attributes.s3backed import (
         S3BackedBigBinaryAttribute,
         S3BackedBigTextAttribute,
@@ -30,7 +24,20 @@ try:
     from .models import Model
 except ImportError as e:  # pragma: no cover
     pass
-except: # pragma: no cover
+except:  # pragma: no cover
+    raise
+
+
+try:
+    from .attributes.encrypted import (
+        EncryptedNumberAttribute,
+        EncryptUnicodeAttribute,
+        EncryptBinaryAttribute,
+        EncryptedJsonAttribute,
+    )
+except ImportError as e:  # pragma: no cover
+    pass
+except:  # pragma: no cover
     raise
 
 
@@ -53,7 +60,7 @@ try:
         JSONAttribute,
         UTCDateTimeAttribute,
     )
-except ImportError as e: # pragma: no cover
+except ImportError as e:  # pragma: no cover
     pass
-except: # pragma: no cover
+except:  # pragma: no cover
     raise

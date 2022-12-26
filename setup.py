@@ -123,6 +123,7 @@ if __name__ == "__main__":
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
     ]
     """
     Full list can be found at: https://pypi.python.org/pypi?%3Aaction=list_classifiers
@@ -153,6 +154,11 @@ if __name__ == "__main__":
     EXTRA_REQUIRE = dict()
 
     try:
+        EXTRA_REQUIRE["encrypt"] = read_requirements_file("requirements-encrypt.txt")
+    except:
+        print("'requirements-encrypt.txt' not found!")
+
+    try:
         EXTRA_REQUIRE["tests"] = read_requirements_file("requirements-test.txt")
     except:
         print("'requirements-test.txt' not found!")
@@ -160,7 +166,7 @@ if __name__ == "__main__":
     try:
         EXTRA_REQUIRE["docs"] = read_requirements_file("requirements-doc.txt")
     except:
-        print("'requirements-test.txt' not found!")
+        print("'requirements-doc.txt' not found!")
 
     setup(
         name=PKG_NAME,
