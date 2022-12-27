@@ -74,7 +74,7 @@ class Model(PynamodbModel):
     Pynamodb Model with additional features.
     """
 
-    def to_dict(self, copy=False) -> dict:
+    def to_dict(self, copy=False) -> dict:  # pragma: no cover
         if copy:
             return copy_lib.deepcopy(self.attribute_values)
         else:

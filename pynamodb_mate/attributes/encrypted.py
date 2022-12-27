@@ -7,8 +7,8 @@ Json data.
 
 import json
 import typing
-from json import loads as json_loads, dumps as json_dumps
-from pynamodb.attributes import UnicodeAttribute, BinaryAttribute
+from pynamodb.attributes import BinaryAttribute
+
 from ..cipher import str_to_key, BaseCipher, AesEcbCipher, AesCtrCipher
 
 
@@ -41,7 +41,7 @@ class SymmetricEncryptedAttribute(object):
         return self._cipher
 
 
-class EncryptUnicodeAttribute(BinaryAttribute, SymmetricEncryptedAttribute):
+class EncryptedUnicodeAttribute(BinaryAttribute, SymmetricEncryptedAttribute):
     def serialize(self, value: str) -> bytes:
         return self.cipher.encrypt(value.encode("utf-8"))
 
@@ -49,7 +49,7 @@ class EncryptUnicodeAttribute(BinaryAttribute, SymmetricEncryptedAttribute):
         return self.cipher.decrypt(value).decode("utf-8")
 
 
-class EncryptBinaryAttribute(BinaryAttribute, SymmetricEncryptedAttribute):
+class EncryptedBinaryAttribute(BinaryAttribute, SymmetricEncryptedAttribute):
     def serialize(self, value: bytes) -> bytes:
         return self.cipher.encrypt(value)
 
