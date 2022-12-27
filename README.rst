@@ -317,4 +317,4 @@ To upgrade to latest version:
 
     $ pip install --upgrade pynamodb_mate
 
-In order to use :class:`~pynamodb_mate.attributes.encrypted.EncryptedNumberAttribute`, :class:`~pynamodb_mate.attributes.encrypted.EncryptedUnicodeAttribute`, :class:`~pynamodb_mate.attributes.encrypted.EncryptedBinaryAttribute`, :class:`~pynamodb_mate.attributes.encrypted.EncryptedJsonAttribute`, you need to install ``pynamodb_mate[encrypt]`` first.pgr
+In order to use :class:`~pynamodb_mate.attributes.encrypted.EncryptedNumberAttribute`, :class:`~pynamodb_mate.attributes.encrypted.EncryptedUnicodeAttribute`, :class:`~pynamodb_mate.attributes.encrypted.EncryptedBinaryAttribute`, :class:`~pynamodb_mate.attributes.encrypted.EncryptedJsonAttribute`, you need to run ``pip install pynamodb_mate[encrypt]`` first.
