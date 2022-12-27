@@ -42,24 +42,52 @@ except:  # pragma: no cover
 
 
 try:
+    from pynamodb.connection import Connection
+    from pynamodb.indexes import (
+        GlobalSecondaryIndex,
+        LocalSecondaryIndex,
+        KeysOnlyProjection,
+        IncludeProjection,
+        AllProjection,
+    )
     from pynamodb.constants import (
+        BINARY,
+        BINARY_SET,
+        BOOLEAN,
+        LIST,
+        MAP,
+        NULL,
+        NUMBER,
+        NUMBER_SET,
+        STRING,
+        STRING_SET,
         PAY_PER_REQUEST_BILLING_MODE,
         PROVISIONED_BILLING_MODE,
     )
     from pynamodb.attributes import (
-        UnicodeAttribute,
+        Attribute as CustomAttribute,
+        DiscriminatorAttribute,
         BinaryAttribute,
-        NumberAttribute,
-        BooleanAttribute,
-        UnicodeSetAttribute,
         BinarySetAttribute,
+        UnicodeAttribute,
+        UnicodeSetAttribute,
+        JSONAttribute,
+        BooleanAttribute,
+        NumberAttribute,
         NumberSetAttribute,
-        ListAttribute,
+        VersionAttribute,
+        TTLAttribute,
+        UTCDateTimeAttribute,
+        NullAttribute,
         MapAttribute,
         DynamicMapAttribute,
-        JSONAttribute,
-        UTCDateTimeAttribute,
+        ListAttribute,
     )
+    from pynamodb.transactions import (
+        TransactionGet,
+        TransactionWrite,
+    )
+    from pynamodb.signals import pre_dynamodb_send, post_dynamodb_send
 except ImportError as e:  # pragma: no cover
     pass
 except:  # pragma: no cover

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import typing as T
+import copy as copy_lib
 
 from pynamodb.models import (
     Model as PynamodbModel,
@@ -70,8 +71,14 @@ console_url_maker = ConsoleUrlMaker()
 
 class Model(PynamodbModel):
     """
-    Add more features later
+    Pynamodb Model with additional features.
     """
+
+    def to_dict(self, copy=False) -> dict:
+        if copy:
+            return copy_lib.deepcopy(self.attribute_values)
+        else:
+            return self.attribute_values
 
     @classmethod
     def delete_all(cls) -> int:
