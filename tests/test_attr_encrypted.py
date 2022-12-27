@@ -14,11 +14,11 @@ class ArchiveModel(pynamodb_mate.Model):
         billing_mode = pynamodb_mate.PAY_PER_REQUEST_BILLING_MODE
 
     aid = pynamodb_mate.UnicodeAttribute(hash_key=True)
-    secret_message = pynamodb_mate.EncryptUnicodeAttribute()
+    secret_message = pynamodb_mate.EncryptedUnicodeAttribute()
     secret_message.encryption_key = ENCRYPTION_KEY
     secret_message.determinative = True
 
-    secret_binary = pynamodb_mate.EncryptBinaryAttribute()
+    secret_binary = pynamodb_mate.EncryptedBinaryAttribute()
     secret_binary.encryption_key = ENCRYPTION_KEY
     secret_binary.determinative = False
 

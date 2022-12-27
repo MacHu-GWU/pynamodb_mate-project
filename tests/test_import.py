@@ -22,8 +22,8 @@ def test():
     _ = pynamodb_mate.JSONAttribute
     _ = pynamodb_mate.UTCDateTimeAttribute
     _ = pynamodb_mate.EncryptedNumberAttribute
-    _ = pynamodb_mate.EncryptUnicodeAttribute
-    _ = pynamodb_mate.EncryptBinaryAttribute
+    _ = pynamodb_mate.EncryptedUnicodeAttribute
+    _ = pynamodb_mate.EncryptedBinaryAttribute
     _ = pynamodb_mate.EncryptedJsonAttribute
     _ = pynamodb_mate.S3BackedBigBinaryAttribute
     _ = pynamodb_mate.S3BackedBigTextAttribute

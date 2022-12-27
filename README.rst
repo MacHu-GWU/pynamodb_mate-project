@@ -16,7 +16,6 @@
 
 ------
 
-
 .. image:: https://img.shields.io/badge/Link-Document-blue.svg
       :target: https://pynamodb_mate.readthedocs.io/
 
@@ -317,3 +316,5 @@ To upgrade to latest version:
 .. code-block:: console
 
     $ pip install --upgrade pynamodb_mate
+
+In order to use :class:`~pynamodb_mate.attributes.encrypted.EncryptedNumberAttribute`, :class:`~pynamodb_mate.attributes.encrypted.EncryptedUnicodeAttribute`, :class:`~pynamodb_mate.attributes.encrypted.EncryptedBinaryAttribute`, :class:`~pynamodb_mate.attributes.encrypted.EncryptedJsonAttribute`, you need to install ``pynamodb_mate[encrypt]`` first.pgr
