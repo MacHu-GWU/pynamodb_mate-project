@@ -43,7 +43,6 @@
 
 Welcome to ``pynamodb_mate`` Documentation
 ==============================================================================
-
 - `Full Documentation is Here <https://pynamodb_mate.readthedocs.io/>`_
 
 .. contents::
@@ -54,7 +53,6 @@ Welcome to ``pynamodb_mate`` Documentation
 
 Overview
 ------------------------------------------------------------------------------
-
 ``pynamodb_mate`` provides advanced best practice using DynamoDB in python. Built on top of `pynamodb <https://pynamodb.readthedocs.io/en/latest/>`_ python library. It maintain the compatibility to major version of ``pynamodb`` library. For example ``pynamodb_mate>=5.0.0,<6.0.0`` is compatible to ``pynamodb>=5.0.0,<6.0.0``.
 
 
@@ -304,7 +302,6 @@ You can use the following methods to create a URL that can preview your table an
 
 Install
 ------------------------------------------------------------------------------
-
 ``pynamodb_mate`` is released on PyPI, so all you need is:
 
 .. code-block:: console
@@ -317,4 +314,9 @@ To upgrade to latest version:
 
     $ pip install --upgrade pynamodb_mate
 
-In order to use :class:`~pynamodb_mate.attributes.encrypted.EncryptedNumberAttribute`, :class:`~pynamodb_mate.attributes.encrypted.EncryptedUnicodeAttribute`, :class:`~pynamodb_mate.attributes.encrypted.EncryptedBinaryAttribute`, :class:`~pynamodb_mate.attributes.encrypted.EncryptedJsonAttribute`, you need to run ``pip install pynamodb_mate[encrypt]`` first.
+In order to use the following feature, you need to run ``pip install pynamodb_mate[encrypt]`` first:
+
+- ``~pynamodb_mate.EncryptedNumberAttribute``
+- ``~pynamodb_mate.EncryptedUnicodeAttribute``
+- ``~pynamodb_mate.EncryptedBinaryAttribute``
+- ``~pynamodb_mate.EncryptedJsonAttribute``
