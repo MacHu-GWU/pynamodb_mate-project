@@ -6,6 +6,8 @@ import copy as copy_lib
 from pynamodb.models import (
     Model as PynamodbModel,
 )
+from pynamodb.settings import OperationSettings
+from pynamodb.exceptions import DeleteError
 
 
 class ConsoleUrlMaker:
@@ -74,11 +76,52 @@ class Model(PynamodbModel):
     Pynamodb Model with additional features.
     """
 
-    def to_dict(self, copy=False) -> dict:  # pragma: no cover
+    def to_dict(self, copy=False) -> dict:
+        """
+        Access the item data as a dictionary.
+        """
         if copy:
             return copy_lib.deepcopy(self.attribute_values)
         else:
             return self.attribute_values
+
+    @classmethod
+    def get_one_or_none(
+        cls,
+        hash_key: T.Any,
+        range_key: T.Optional[T.Any] = None,
+        consistent_read: bool = False,
+        attributes_to_get: T.Optional[T.Sequence[str]] = None,
+        settings: OperationSettings = OperationSettings.default,
+    ) -> T.Optional["Model"]:
+        """
+        Get one Dynamodb item object or None if not exists.
+        """
+        try:
+            return cls.get(
+                hash_key=hash_key,
+                range_key=range_key,
+                consistent_read=consistent_read,
+                attributes_to_get=attributes_to_get,
+                settings=settings,
+            )
+        except cls.DoesNotExist:
+            return None
+
+    def delete_if_exists(self) -> bool:
+        """
+        Delete the item if exists. Return True if exists.
+        """
+        hash_key_attr = self.__class__._hash_key_attribute()
+        range_key_attr = self.__class__._range_key_attribute()
+        condition = hash_key_attr.exists()
+        if range_key_attr:
+            condition &= range_key_attr.exists()
+        try:
+            self.delete(condition=condition)
+            return True
+        except DeleteError:
+            return False
 
     @classmethod
     def delete_all(cls) -> int:

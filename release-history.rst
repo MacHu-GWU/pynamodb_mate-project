@@ -20,6 +20,8 @@ Backlog
 **Features and Improvements**
 
 - add more pynamodb API to top module level
+- add :meth:`pynamodb_mate.models.Model.get_one_of_none` method
+- add :meth:`pynamodb_mate.models.Model.delete_if_exists` method
 
 **Breaking change**
 
