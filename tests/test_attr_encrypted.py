@@ -69,22 +69,22 @@ class TestEncryptUnicode(object):
         assert model.secret_data == data
 
         # equal filter on encrypted field
-        assert count_result(
-            ArchiveModel.scan(ArchiveModel.secret_message == msg)
-        ) == 1
-        assert count_result(
-            ArchiveModel.scan(ArchiveModel.secret_message == "hold the fire now!")
-        ) == 0
+        assert count_result(ArchiveModel.scan(ArchiveModel.secret_message == msg)) == 1
+        assert (
+            count_result(
+                ArchiveModel.scan(ArchiveModel.secret_message == "hold the fire now!")
+            )
+            == 0
+        )
 
         # for non-determinative field, same input and same output
         # doesn't return same output
-        assert count_result(
-            ArchiveModel.scan(ArchiveModel.secret_binary == binary)
-        ) == 0
+        assert (
+            count_result(ArchiveModel.scan(ArchiveModel.secret_binary == binary)) == 0
+        )
 
 
 if __name__ == "__main__":
-    import os
+    from pynamodb_mate.tests import run_cov_test
 
-    basename = os.path.basename(__file__)
-    pytest.main([basename, "-s", "--tb=native"])
+    run_cov_test(__file__, "pynamodb_mate.attributes.encrypted")

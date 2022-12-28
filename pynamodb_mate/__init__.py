@@ -84,11 +84,12 @@ try:
         ListAttribute,
     )
     from pynamodb.transactions import (
-        TransactionGet,
-        TransactionWrite,
+        TransactGet,
+        TransactWrite,
     )
     from pynamodb.signals import pre_dynamodb_send, post_dynamodb_send
 except ImportError as e:  # pragma: no cover
+    print(e)
     pass
 except:  # pragma: no cover
     raise

@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import pytest
-
 # Import pynamodb_mate library
 import pynamodb_mate
 from pynamodb_mate.tests import py_ver
@@ -84,7 +82,6 @@ def test_io_edge_case():
 
 
 if __name__ == "__main__":
-    import os
+    from pynamodb_mate.tests import run_cov_test
 
-    basename = os.path.basename(__file__)
-    pytest.main([basename, "-s", "--tb=native"])
+    run_cov_test(__file__, "pynamodb_mate.attributes.compressed")
