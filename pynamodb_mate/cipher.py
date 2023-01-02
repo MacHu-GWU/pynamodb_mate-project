@@ -1,9 +1,15 @@
 # -*- coding: utf-8 -*-
 
+"""
+implement the abstract cipher.
+"""
+
 import json
 import hashlib
+
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
+
 from .helpers import bytes_to_base85str, base85str_to_bytes
 
 

@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+Implements the DynamoDB status tracking pattern.
+"""
+
 import typing as T
 import enum
 import uuid

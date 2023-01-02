@@ -11,8 +11,10 @@ sub packages and modules
     :maxdepth: 1
 
     attributes <attributes/__init__>
+    patterns <patterns/__init__>
     _version <_version>
     cipher <cipher>
+    compat <compat>
     helpers <helpers>
     models <models>
     

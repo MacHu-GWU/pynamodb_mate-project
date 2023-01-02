@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 
+"""
+Store big binary or text in S3 and store the s3 object path in DynamoDB.
+"""
+
 import gzip
-import typing
 
 from pynamodb.attributes import (
     UnicodeAttribute,
@@ -13,7 +16,8 @@ class S3BackedAttribute(UnicodeAttribute):
     """
     **中文文档**
 
-    没有办法从 Attribute 对象中访问到上级的 Model 对象.
+    没有办法从 Attribute 对象中访问到上级的 Model 对象, 所以只能自己传入每个 attribute
+    的参数.
     """
 
     bucket_name = None
@@ -27,6 +31,9 @@ class S3BackedAttribute(UnicodeAttribute):
 
 
 class S3BackedBigBinaryAttribute(S3BackedAttribute):
+    """
+    Representation of a binary attribute.
+    """
     key_template = "pynamodb-mate/bigbinary/{fingerprint}.dat"
 
     def serialize(self, value: bytes) -> str:
@@ -49,6 +56,9 @@ class S3BackedBigBinaryAttribute(S3BackedAttribute):
 
 
 class S3BackedBigTextAttribute(S3BackedAttribute):
+    """
+    Representation of a text attribute.
+    """
     key_template = "pynamodb-mate/bigtext/{fingerprint}.txt"
 
     def serialize(self, value: str) -> str:

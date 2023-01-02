@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+Enhance the pynamodb.models.Model class.
+"""
+
 import typing as T
 import copy as copy_lib
 
@@ -136,6 +140,9 @@ class Model(PynamodbModel):
 
     @classmethod
     def get_table_overview_console_url(cls) -> str:
+        """
+        Create the AWS Console url that can preview Dynamodb Table settings.
+        """
         return console_url_maker.table_overview(
             region_name=cls.Meta.region,
             table_name=cls.Meta.table_name,
@@ -143,6 +150,9 @@ class Model(PynamodbModel):
 
     @classmethod
     def get_table_items_console_url(cls) -> str:
+        """
+        Create the AWS Console url that can preview items in Dynamodb Table.
+        """
         return console_url_maker.table_items(
             region_name=cls.Meta.region,
             table_name=cls.Meta.table_name,
@@ -150,6 +160,9 @@ class Model(PynamodbModel):
 
     @property
     def item_detail_console_url(self) -> str:
+        """
+        Return the AWS Console url that can preview Dynamodb item data.
+        """
         klass = self.__class__
         hash_key_name = klass._hash_keyname
         range_key_name = klass._range_keyname

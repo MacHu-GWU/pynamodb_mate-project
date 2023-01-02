@@ -13,6 +13,9 @@ from ..cipher import str_to_key, BaseCipher, AesEcbCipher, AesCtrCipher
 
 
 class SymmetricEncryptedAttribute(object):
+    """
+    Symmetric Encrypted Attribute
+    """
     encryption_key = None  # type: str
     determinative = None  # type: str
 
@@ -42,6 +45,9 @@ class SymmetricEncryptedAttribute(object):
 
 
 class EncryptedUnicodeAttribute(BinaryAttribute, SymmetricEncryptedAttribute):
+    """
+    Encrypted Unicode Attribute.
+    """
     def serialize(self, value: str) -> bytes:
         return self.cipher.encrypt(value.encode("utf-8"))
 
@@ -58,6 +64,9 @@ class EncryptedBinaryAttribute(BinaryAttribute, SymmetricEncryptedAttribute):
 
 
 class EncryptedNumberAttribute(BinaryAttribute, SymmetricEncryptedAttribute):
+    """
+    Encrypted Number Attribute.
+    """
     def serialize(self, value: typing.Union[int, float]) -> bytes:
         return self.cipher.encrypt(json.dumps(value).encode("ascii"))
 
@@ -66,4 +75,7 @@ class EncryptedNumberAttribute(BinaryAttribute, SymmetricEncryptedAttribute):
 
 
 class EncryptedJsonAttribute(EncryptedNumberAttribute):
+    """
+    Encrypted JSON data Attribute.
+    """
     pass

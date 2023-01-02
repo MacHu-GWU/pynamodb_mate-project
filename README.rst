@@ -62,7 +62,7 @@ Overview
 ``pynamodb_mate`` provides advanced best practice using DynamoDB in python. Built on top of `pynamodb <https://pynamodb.readthedocs.io/en/latest/>`_ python library. It maintain the compatibility to major version of ``pynamodb`` library. For example ``pynamodb_mate>=5.0.0,<6.0.0`` is compatible to ``pynamodb>=5.0.0,<6.0.0``.
 
 
-Feature1. Store Large Object in DynamoDB
+Feature 1. Store Large Object in DynamoDB
 ------------------------------------------------------------------------------
 DynamoDB is a very good choice for **Pay-as-you-go**, **high-concurrent** key value database. Sometimes, you want to store large binary object as a DynamoDB item attribute. For example, a web crawler app wants to store crawled html source to avoid re-visit the same url. But DynamoDB has a limitation that one item can not be larger than 256KB. How could you solve the problem?
 
@@ -139,7 +139,7 @@ A easy solution is to store large binary object in s3, and only store the s3 uri
 In this example, you can pass the raw html to ``url = UrlModel(html="<html>big HTML ...</html>", ...)`` attribute. When writing this item to DynamoDB, it automatically use the sha256 fingerprint of the data in S3 key naming convention, stores the S3 uri to the ``html`` field, and store the html content to S3 object. In other words, same data will be stored at the same S3 location to avoid duplicate traffic. However, it won't delete the S3 object because there might be another item are using the same S3 object.
 
 
-Feature2. Client Side Encryption
+Feature 2. Client Side Encryption
 ------------------------------------------------------------------------------
 DynamoDB support encryption at the rest (Server Side Encryption) and use SSL to encryption the transit data (Encrypt at the fly) by default. But you need to spend additional work to enable "Client Side Encryption". ``pynamodb_mate`` made it deadly easy.
 
@@ -220,7 +220,7 @@ Internally it always use binary for data serialization / deserialization. It con
 For field that you still want to be able to query on it, you use ``determinative = True``. And it uses AES ECB. It is approved that not secure for middle man attack. But you can still use it with DynamoDB because DynamoDB api use SSL to encrypt it in transit. For ``determinative = False``, it uses AES CTR.
 
 
-Feature3. Compressed Attribute
+Feature 3. Compressed Attribute
 ------------------------------------------------------------------------------
 Sometimes you want to compress the data before store to save DB space. For example, in a E-commerce data model, an order has many items like this: ``[{"item_name": "apple", "item_count": 12}, {"item_name": "banana", "item_count": 5}]``. There are lots of repeated information such as the keys ``"item_name"`` and ``"item_count"``.
 
@@ -292,7 +292,7 @@ Sometimes you want to compress the data before store to save DB space. For examp
 Internally it always use binary for data serialization / deserialization. It convert the original data to binary, and compress it before saving to DynamoDB. It read the data from DynamoDB, decompress it and convert it back to original data to user.
 
 
-Feature4. AWS DynamoDB Console
+Feature 4. AWS DynamoDB Console
 ------------------------------------------------------------------------------
 You can use the following methods to create a URL that can preview your table and items in your browser. This could be very helpful with logging.
 
@@ -306,7 +306,7 @@ You can use the following methods to create a URL that can preview your table an
 
 Feature 5. DynamoDB Patterns
 ------------------------------------------------------------------------------
-``pynamodb_mate`` also provides some commonly used patterns as base ORM models. It is based on the author's working experience dealing with many customers from different industry.
+``pynamodb_mate`` also provides some commonly used patterns as base ORM models. It is based on the author's working experience dealing with many customers from many kinds of industry.
 
 
 .. _install:
@@ -327,10 +327,10 @@ To upgrade to latest version:
 
 In order to use the following feature, you need to run ``pip install pynamodb_mate[encrypt]`` first:
 
-- ``~pynamodb_mate.EncryptedNumberAttribute``
-- ``~pynamodb_mate.EncryptedUnicodeAttribute``
-- ``~pynamodb_mate.EncryptedBinaryAttribute``
-- ``~pynamodb_mate.EncryptedJsonAttribute``
+- ``pynamodb_mate.EncryptedNumberAttribute``
+- ``pynamodb_mate.EncryptedUnicodeAttribute``
+- ``pynamodb_mate.EncryptedBinaryAttribute``
+- ``pynamodb_mate.EncryptedJsonAttribute``
 
 
 Disclaimer

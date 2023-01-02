@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+Auto-compress and decompress data in DynamoDB
+"""
+
 import gzip
 import json
 from typing import Optional
