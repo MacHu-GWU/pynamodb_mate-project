@@ -308,6 +308,27 @@ Feature 5. DynamoDB Patterns
 ------------------------------------------------------------------------------
 ``pynamodb_mate`` also provides some commonly used patterns as base ORM models. It is based on the author's working experience dealing with many customers from many kinds of industry.
 
+Available patterns:
+
+.. contents::
+    :class: this-will-duplicate-information-and-it-is-still-useful-here
+    :depth: 1
+    :local:
+
+Status Tracker
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+`See example <https://github.com/MacHu-GWU/pynamodb_mate-project/blob/master/examples/patterns/status-tracker.ipynb>`_
+
+It many business critical use case, it is necessary to track every task to know which is succeeded, which is failed and which is still in progress. Some advanced users also wants to:
+
+- For those succeeded tasks, store additional information such as the output of the task and log the success time.
+- For those failed task, log the error message for debug, so you can fix the bug and rerun the task.
+- For those failed task, you want to get all of failed tasks by one simple query and rerun with the updated business logic.
+- For those tasks failed too many times, you don't want to retry them anymore and wants to ignore them.
+- Run custom query based on task status for analytics purpose.
+
+With DynamoDB, you can enable this advanced status tracking feature for your application with just a few lines of code. And you can use the "elegant" context manager to wrap around your business logic code and enjoy all the features above.
+
 
 .. _install:
 
