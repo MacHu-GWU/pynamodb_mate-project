@@ -47,6 +47,8 @@ class Tracker(BaseStatusTracker):
 
     status_and_task_id_index = StatusAndTaskIdIndex()
 
+    STATUS_ENUM = StatusEnum
+
     def start_job(
         self,
         debug=True,
@@ -115,16 +117,18 @@ class TestStatusTracker:
         self._test_update_context()
 
         self._test_1_happy_path()
-        # self._test_2_lock_mechanism()
-        # self._test_3_retry_and_ignore()
-        #
-        # self._test_11_query_by_status()
+        self._test_2_lock_mechanism()
+        self._test_3_retry_and_ignore()
+
+        self._test_11_query_by_status()
 
     def _test_update_context(self):
         Tracker = JobTestTracker
         task_id = "t-0"
         tracker = Tracker.new(task_id, save=False)
         assert tracker.is_item_exists() is False
+        assert tracker.status == StatusEnum.s00_todo.value
+        assert tracker.status_name == "s00_todo"
 
         tracker = Tracker.new(task_id)
         assert tracker.is_item_exists() is True
@@ -192,21 +196,21 @@ class TestStatusTracker:
         assert tracker.retry == 0
 
         # start another job, this time it will fail
-        # tracker = Tracker.new(task_id, data={"version": 1})
-        # try:
-        #     with tracker.start_job(debug=True):
-        #         tracker.set_data({"version": 2})
-        #         raise UserError("something is wrong!")
-        # except UserError:
-        #     pass
-        #
-        # assert tracker.status == StatusEnum.s06_failed.value
-        # assert tracker.data == {"version": 1}  # it is clean data
-        # assert tracker.retry == 1
-        # tracker.refresh()
-        # assert tracker.status == StatusEnum.s06_failed.value
-        # assert tracker.data == {"version": 1}  # it is the database side data
-        # assert tracker.retry == 1
+        tracker = Tracker.new(task_id, data={"version": 1})
+        try:
+            with tracker.start_job(debug=True):
+                tracker.set_data({"version": 2})
+                raise UserError("something is wrong!")
+        except UserError:
+            pass
+
+        assert tracker.status == StatusEnum.s06_failed.value
+        assert tracker.data == {"version": 1}  # it is clean data
+        assert tracker.retry == 1
+        tracker.refresh()
+        assert tracker.status == StatusEnum.s06_failed.value
+        assert tracker.data == {"version": 1}  # it is the database side data
+        assert tracker.retry == 1
 
     def _test_2_lock_mechanism(self):
         Tracker = JobTestTracker

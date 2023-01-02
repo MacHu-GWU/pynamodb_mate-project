@@ -15,6 +15,16 @@ Backlog
 **Miscellaneous**
 
 
+5.3.4.3 (2022-01-02)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Minor Improvements**
+
+- :mod:`pynamodb_mate.patterns.status_tracker` Pattern:
+    - the status_tracker pattern doesn't require the status index name to be ``status_and_task_id_index`` anymore. it will automatically discover that.
+    - add debug information when you start a job.
+    - add example jupyter notebook.
+
+
 5.3.4.2 (2022-01-01)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Features and Improvements**

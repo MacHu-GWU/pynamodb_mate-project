@@ -7,6 +7,7 @@ Implements the DynamoDB status tracking pattern.
 import typing as T
 import enum
 import uuid
+import inspect
 import traceback
 import dataclasses
 from contextlib import contextmanager
@@ -46,6 +47,7 @@ class BaseStatusEnum(int, enum.Enum):
             s10_ignore = 10 # the task already failed multiple times, it is ignored
 
     """
+
     @property
     def status_name(self) -> str:
         """
@@ -135,6 +137,7 @@ class BaseDataClass:
     """
     Base dataclass for data and errors.
     """
+
     @classmethod
     def from_dict(cls, dct: dict):
         return cls(**dct)
@@ -150,6 +153,7 @@ class BaseData(BaseDataClass):
     dict to manage the data attribute. You can inherit from this class and
     define your own data fields.
     """
+
     pass
 
 
@@ -212,8 +216,11 @@ class BaseStatusTracker(Model):
         null=True,
     )
 
-    status_and_task_id_index: StatusAndTaskIdIndex
+    _status_and_task_id_index: T.Optional[StatusAndTaskIdIndex] = None
 
+    # one DynamoDB table can serve multiple jobs
+    # if you defined a default job id for the table
+    # you don't need to explicitly specify the job id in many API
     JOB_ID: T.Optional[str] = None
     # the separator string between job_id and task_id
     SEP = "____"
@@ -270,7 +277,10 @@ class BaseStatusTracker(Model):
         """
         Return the status name of the task.
         """
-        return self.STATUS_ENUM.value_to_name(self.status)
+        if self.STATUS_ENUM is None:
+            return str(self.status)
+        else:
+            return self.STATUS_ENUM.value_to_name(self.status)
 
     @classmethod
     def get_one_or_none(
@@ -598,16 +608,12 @@ class BaseStatusTracker(Model):
             ``ignore_status``.
         """
         if debug:
-            if self.STATUS_ENUM is None:
-                status_name = self.status
-            else:
-                status_name = self.status_name
             print(
                 "{msg:-^80}".format(
                     msg=(
                         f" ▶️ start task(job_id={self.job_id!r}, "
                         f"task_id={self.task_id!r}, "
-                        f"status={status_name!r}) "
+                        f"status={self.status_name!r}) "
                     )
                 )
             )
@@ -626,13 +632,18 @@ class BaseStatusTracker(Model):
         # mark as in progress
         with self.update_context():
             self.set_status(in_process_status).set_update_time().set_locked()
+            if debug:
+                print(f"🔓 set status {self.status_name!r} and lock the task.")
 
         try:
             self._setup_update_context()
             # print("before yield")
             yield self
             if debug:
-                print("✅ task succeeded, update status and unlock the task.")
+                print(
+                    f"✅ 🔐 task succeeded, "
+                    f"set status {self.status_name!r} and unlock the task."
+                )
             # print("after yield")
             (
                 self.set_status(success_status)
@@ -643,8 +654,6 @@ class BaseStatusTracker(Model):
             # print("end of success logic")
         except Exception as e:  # handling user code
             # print("before error handling")
-            if debug:
-                print("❌ task failed, update status and unlock the task.")
             # reset the update context
             self._teardown_update_context()
             self._setup_update_context()
@@ -662,6 +671,17 @@ class BaseStatusTracker(Model):
             )
             if self.retry >= self.MAX_RETRY:
                 self.set_status(ignore_status)
+                if debug:
+                    print(
+                        f"❌ 🔐 task failed {self.MAX_RETRY} times already, "
+                        f"set status {self.status_name!r} and unlock the task."
+                    )
+            else:
+                if debug:
+                    print(
+                        f"❌ 🔐 task failed, "
+                        f"set stats {self.status_name!r} and unlock the task."
+                    )
             # print("after error handling")
             raise e
         finally:
@@ -670,20 +690,30 @@ class BaseStatusTracker(Model):
             self._teardown_update_context()
 
             if debug:
-                if self.STATUS_ENUM is None:
-                    status_name = self.status
-                else:
-                    status_name = self.status_name
                 print(
                     "{msg:-^80}".format(
                         msg=(
                             f" ⏹️ end task(job_id={self.job_id!r}, "
                             f"task_id={self.task_id!r}, "
-                            f"status={status_name!r}) "
+                            f"status={self.status_name!r}) "
                         )
                     )
                 )
             # print("after finally")
+
+    @classmethod
+    def _get_status_index(cls) -> StatusAndTaskIdIndex:
+        """
+        Detect the status index object.
+        """
+        if cls._status_and_task_id_index is None:
+            for k, v in inspect.getmembers(cls):
+                if isinstance(v, StatusAndTaskIdIndex):
+                    cls._status_and_task_id_index = v
+                    return cls._status_and_task_id_index
+            raise ValueError("you haven't defined a StatusAndTaskIdIndex")
+        else:
+            return cls._status_and_task_id_index
 
     @classmethod
     def query_by_status(
@@ -701,7 +731,7 @@ class BaseStatusTracker(Model):
         else:
             status_list = [status]
         for status in status_list:
-            yield from cls.status_and_task_id_index.query(
+            yield from cls._get_status_index().query(
                 hash_key=cls.make_value(status, JOB_ID),
                 limit=limit,
             )
