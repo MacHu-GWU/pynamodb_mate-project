@@ -3,8 +3,8 @@
 from .impl import (
     BaseStatusEnum,
     StatusAndTaskIdIndex,
-    LockError,
-    IgnoreError,
+    TaskLockedError,
+    TaskIgnoredError,
     BaseData,
     BaseErrors,
     BaseStatusTracker,

@@ -26,20 +26,48 @@ from ...compat import cached_property
 
 
 class BaseStatusEnum(int, enum.Enum):
+    """
+    Base enum class to define the status code you want the tracker to track.
+
+    The value of the status should be an integer. For example, you have a task
+    that has the following status:
+
+    .. code-block:: python
+
+        class StatusEnum(BaseStatusEnum):
+            s00_todo = 0 # the task is defined but not started
+            s03_in_progress = 3 # the task is in progress
+            s06_failed = 6 # the task failed
+            s09_success = 9 # the task succeeded
+            s10_ignore = 10 # the task already failed multiple times, it is ignored
+
+    """
     @property
     def status_name(self) -> str:
+        """
+        Human readable status name.
+        """
         return self.name
 
     @classmethod
     def from_value(cls, value: int) -> "BaseStatusEnum":
+        """
+        Get status enum object from it's value.
+        """
         return cls(value)
 
     @classmethod
     def value_to_name(cls, value: int) -> str:
+        """
+        Convert status value to status name.
+        """
         return cls.from_value(value).name
 
     @classmethod
     def values(cls) -> T.List[int]:
+        """
+        Return list of all available status values.
+        """
         return [status.value for status in cls]
 
 
@@ -50,12 +78,15 @@ EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 
 def utc_now() -> datetime:
+    """
+    Get time aware utc now datetime object.
+    """
     return datetime.utcnow().replace(tzinfo=timezone.utc)
 
 
 class StatusAndTaskIdIndex(GlobalSecondaryIndex):
     """
-    GSI for query by job_id and status
+    GSI for query by job_id and status.
     """
 
     class Meta:
@@ -66,7 +97,7 @@ class StatusAndTaskIdIndex(GlobalSecondaryIndex):
     key: T.Union[str, UnicodeAttribute] = UnicodeAttribute(range_key=True)
 
 
-class LockError(Exception):
+class TaskLockedError(Exception):
     """
     Raised when a task worker is trying to work on a locked task.
     """
@@ -74,7 +105,7 @@ class LockError(Exception):
     pass
 
 
-class IgnoreError(Exception):
+class TaskIgnoredError(Exception):
     """
     Raised when a task is already in "ignore" status (You need to define).
     """
@@ -97,6 +128,9 @@ _update_context: T.Dict[
 
 @dataclasses.dataclass
 class BaseDataClass:
+    """
+    Base dataclass for data and errors.
+    """
     @classmethod
     def from_dict(cls, dct: dict):
         return cls(**dct)
@@ -107,6 +141,11 @@ class BaseDataClass:
 
 @dataclasses.dataclass
 class BaseData(BaseDataClass):
+    """
+    Base dataclass for data attribute, if you want to use a class instead of
+    dict to manage the data attribute. You can inherit from this class and
+    define your own data fields.
+    """
     pass
 
 
@@ -120,6 +159,8 @@ class BaseStatusTracker(Model):
     """
     The DynamoDB ORM model for the status tracking. You can use one
     DynamoDB table for multiple status tracking jobs.
+
+    TODO: explain what is the problem this pattern is trying to solve.
 
     Concepts:
 
@@ -206,10 +247,16 @@ class BaseStatusTracker(Model):
 
     @cached_property
     def task_id(self) -> str:
+        """
+        Return the task_id part of the key. It should be unique with in a job.
+        """
         return self.key.split(self.SEP)[1]
 
     @property
     def status(self) -> int:
+        """
+        Return the status value of the task.
+        """
         return int(self.value.split(self.SEP)[1])
 
     @classmethod
@@ -221,6 +268,9 @@ class BaseStatusTracker(Model):
         settings: OperationSettings = OperationSettings.default,
         job_id: T.Optional[str] = None,
     ) -> T.Optional["BaseStatusTracker"]:
+        """
+        Get one item by task_id. If the item does not exist, return None.
+        """
         JOB_ID = cls.JOB_ID if job_id is None else job_id
         return super().get_one_or_none(
             hash_key=cls.make_key(task_id, JOB_ID),
@@ -252,8 +302,7 @@ class BaseStatusTracker(Model):
         job_id: T.Optional[str] = None,
     ) -> "BaseStatusTracker":
         """
-        A factory method to create new instance of a tracker. It won't save
-        to DynamoDB.
+        A factory method to create new instance of a tracker.
         """
         JOB_ID = cls.JOB_ID if job_id is None else job_id
         kwargs = dict(
@@ -273,8 +322,9 @@ class BaseStatusTracker(Model):
         job_id: T.Optional[str] = None,
     ) -> "BaseStatusTracker":
         """
-        A factory method to create new instance of a tracker and save it to
-        DynamoDB.
+        A factory method to create new task with the default status (usually 0).
+
+        :param save: if True, also save the item to dynamodb.
         """
         JOB_ID = cls.JOB_ID if job_id is None else job_id
         obj = cls.make(
@@ -294,6 +344,8 @@ class BaseStatusTracker(Model):
     ) -> int:
         """
         Delete all item belongs to specific job.
+
+        Note: this method is expensive, it will scan a lot of items.
         """
         JOB_ID = cls.JOB_ID if job_id is None else job_id
         ith = 0
@@ -317,6 +369,8 @@ class BaseStatusTracker(Model):
     ):
         """
         Count number of items belong to specific job.
+
+        Note: this method is expensive, it will scan a lot of items.
         """
         JOB_ID = cls.JOB_ID if job_id is None else job_id
         ith = 0
@@ -517,13 +571,25 @@ class BaseStatusTracker(Model):
         success_status: int,
         ignore_status: int,
     ) -> "BaseStatusTracker":
+        """
+        A context manager to execute a task, and handle error automatically.
+
+        1. It will set the status to the
+        ``in_progress_status`` and set the lock. If the task is already locked,
+        it will raise a :class:`TaskLockedError`.
+        2. If the task succeeded, it will set the status to the ``success_status``.
+        3. If the task fail, it will set the status to the ``failed_status`` and
+            log the error to ``.errors`` attribute.
+        4. If the task failed N times in a row, it will set the status to the
+            ``ignore_status``.
+        """
         # Handle concurrent lock
         if self.is_locked():
-            raise LockError(f"Task {self.key} is locked.")
+            raise TaskLockedError(f"Task {self.key} is locked.")
 
         # Handle ignore status
         if self.status == ignore_status:
-            raise IgnoreError(
+            raise TaskIgnoredError(
                 f"Task {self.key} retry count already exceeded {self.MAX_RETRY}, "
                 f"ignore it."
             )
@@ -578,6 +644,9 @@ class BaseStatusTracker(Model):
         limit: int = 10,
         job_id: T.Optional[str] = None,
     ) -> T.Iterable["BaseStatusTracker"]:
+        """
+        Get task items by status.
+        """
         JOB_ID = cls.JOB_ID if job_id is None else job_id
         if isinstance(status, list):
             status_list = status

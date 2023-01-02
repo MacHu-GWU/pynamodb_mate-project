@@ -20,6 +20,7 @@ def test():
     _ = pynamodb_mate.PROVISIONED_BILLING_MODE
 
     _ = pynamodb_mate.Model
+
     _ = pynamodb_mate.UnicodeAttribute
     _ = pynamodb_mate.BinaryAttribute
     _ = pynamodb_mate.NumberAttribute
@@ -52,6 +53,14 @@ def test():
 
     _ = pynamodb_mate.pre_dynamodb_send
     _ = pynamodb_mate.post_dynamodb_send
+
+    _ = pynamodb_mate.patterns.status_tracker.BaseStatusEnum
+    _ = pynamodb_mate.patterns.status_tracker.StatusAndTaskIdIndex
+    _ = pynamodb_mate.patterns.status_tracker.TaskLockedError
+    _ = pynamodb_mate.patterns.status_tracker.TaskIgnoredError
+    _ = pynamodb_mate.patterns.status_tracker.BaseData
+    _ = pynamodb_mate.patterns.status_tracker.BaseErrors
+    _ = pynamodb_mate.patterns.status_tracker.BaseStatusTracker
 
 
 if __name__ == "__main__":

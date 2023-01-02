@@ -11,8 +11,8 @@ from pynamodb_mate.patterns.status_tracker import (
     BaseStatusEnum,
     StatusAndTaskIdIndex,
     BaseStatusTracker,
-    LockError,
-    IgnoreError,
+    TaskLockedError,
+    TaskIgnoredError,
     BaseData,
     BaseErrors,
 )
@@ -232,7 +232,7 @@ class TestStatusTracker:
         # run a job while it is locked
         assert tracker.data == {}
 
-        with pytest.raises(LockError):
+        with pytest.raises(TaskLockedError):
             with tracker.start_job():
                 tracker.set_data({"version": 2})
 
@@ -299,7 +299,7 @@ class TestStatusTracker:
         assert tracker.retry == Tracker.MAX_RETRY
         assert tracker.status == StatusEnum.s10_ignore.value
 
-        with pytest.raises(IgnoreError):
+        with pytest.raises(TaskIgnoredError):
             with tracker.start_job():
                 tracker.set_data({"version": 3})
 

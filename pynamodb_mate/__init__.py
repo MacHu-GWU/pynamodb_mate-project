@@ -12,36 +12,6 @@ __maintainer_email__ = __author_email__
 
 
 try:
-    from .attributes.s3backed import (
-        S3BackedBigBinaryAttribute,
-        S3BackedBigTextAttribute,
-    )
-    from .attributes.compressed import (
-        CompressedJSONAttribute,
-        CompressedUnicodeAttribute,
-        CompressedBinaryAttribute,
-    )
-    from .models import Model
-except ImportError as e:  # pragma: no cover
-    pass
-except:  # pragma: no cover
-    raise
-
-
-try:
-    from .attributes.encrypted import (
-        EncryptedNumberAttribute,
-        EncryptedUnicodeAttribute,
-        EncryptedBinaryAttribute,
-        EncryptedJsonAttribute,
-    )
-except ImportError as e:  # pragma: no cover
-    pass
-except:  # pragma: no cover
-    raise
-
-
-try:
     from pynamodb.connection import Connection
     from pynamodb.indexes import (
         GlobalSecondaryIndex,
@@ -90,6 +60,44 @@ try:
     from pynamodb.signals import pre_dynamodb_send, post_dynamodb_send
 except ImportError as e:  # pragma: no cover
     print(e)
+    pass
+except:  # pragma: no cover
+    raise
+
+
+try:
+    from .attributes.s3backed import (
+        S3BackedBigBinaryAttribute,
+        S3BackedBigTextAttribute,
+    )
+    from .attributes.compressed import (
+        CompressedJSONAttribute,
+        CompressedUnicodeAttribute,
+        CompressedBinaryAttribute,
+    )
+    from .models import Model
+except ImportError as e:  # pragma: no cover
+    pass
+except:  # pragma: no cover
+    raise
+
+
+try:
+    from .attributes.encrypted import (
+        EncryptedNumberAttribute,
+        EncryptedUnicodeAttribute,
+        EncryptedBinaryAttribute,
+        EncryptedJsonAttribute,
+    )
+except ImportError as e:  # pragma: no cover
+    pass
+except:  # pragma: no cover
+    raise
+
+
+try:
+    from . import patterns
+except ImportError as e:  # pragma: no cover
     pass
 except:  # pragma: no cover
     raise
