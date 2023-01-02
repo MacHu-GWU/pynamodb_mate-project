@@ -21,8 +21,8 @@ from pynamodb.indexes import (
 )
 from pynamodb.settings import OperationSettings
 
-from ..models import Model
-from ..compat import cached_property
+from ...models import Model
+from ...compat import cached_property
 
 
 class BaseStatusEnum(int, enum.Enum):

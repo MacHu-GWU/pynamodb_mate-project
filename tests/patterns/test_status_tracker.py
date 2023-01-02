@@ -13,16 +13,17 @@ from pynamodb_mate.patterns.status_tracker import (
     BaseStatusTracker,
     LockError,
     IgnoreError,
-    EPOCH,
-    utc_now,
-    BaseDataClass,
     BaseData,
     BaseErrors,
+)
+from pynamodb_mate.patterns.status_tracker.impl import (
+    EPOCH,
+    utc_now,
 )
 
 
 @dataclasses.dataclass
-class Data(BaseDataClass):
+class Data(BaseData):
     name: str = dataclasses.field()
 
 
