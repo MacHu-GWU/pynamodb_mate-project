@@ -62,11 +62,11 @@ Overview
 ``pynamodb_mate`` provides advanced best practice using DynamoDB in python. Built on top of `pynamodb <https://pynamodb.readthedocs.io/en/latest/>`_ python library. It maintain the compatibility to major version of ``pynamodb`` library. For example ``pynamodb_mate>=5.0.0,<6.0.0`` is compatible to ``pynamodb>=5.0.0,<6.0.0``.
 
 
-Feature1. Store Large Object in Dynamodb
+Feature1. Store Large Object in DynamoDB
 ------------------------------------------------------------------------------
-DynamoDB is a very good choice for **Pay-as-you-go**, **high-concurrent** key value database. Sometimes, you want to store large binary object as a Dynamodb item attribute. For example, a web crawler app wants to store crawled html source to avoid re-visit the same url. But Dynamodb has a limitation that one item can not be larger than 256KB. How could you solve the problem?
+DynamoDB is a very good choice for **Pay-as-you-go**, **high-concurrent** key value database. Sometimes, you want to store large binary object as a DynamoDB item attribute. For example, a web crawler app wants to store crawled html source to avoid re-visit the same url. But DynamoDB has a limitation that one item can not be larger than 256KB. How could you solve the problem?
 
-A easy solution is to store large binary object in s3, and only store the s3 uri in Dynamodb. ``pynamodb_mate`` library provides this feature on top of ``pynamodb`` project (A DynamoDB ORM layer in Python).
+A easy solution is to store large binary object in s3, and only store the s3 uri in DynamoDB. ``pynamodb_mate`` library provides this feature on top of ``pynamodb`` project (A DynamoDB ORM layer in Python).
 
 **1. Define your Data Model**
 
@@ -98,7 +98,7 @@ A easy solution is to store large binary object in s3, and only store the s3 uri
         content.bucket_name = "my-bucket"
         content.s3_client = s3_client
 
-    # create dynamodb table if not exists, quick skip if already exists
+    # create DynamoDB table if not exists, quick skip if already exists
     UrlModel.create_table(wait=True)
 
 **2. Write / Read / Update / Delete**
@@ -112,7 +112,7 @@ A easy solution is to store large binary object in s3, and only store the s3 uri
     # create item
     url = UrlModel(url=url, html=html, content=content)
 
-    # write item to dynamodb table
+    # write item to DynamoDB table
     url.save()
 
     # get the item
@@ -123,7 +123,7 @@ A easy solution is to store large binary object in s3, and only store the s3 uri
     # update the item
     url.update(
         actions=[
-            UrlModel.html.set("<html>Hello Dynamodb</html>"),
+            UrlModel.html.set("<html>Hello DynamoDB</html>"),
             UrlModel.content.set("this is a real image!".encode("utf-8")),
         ]
     )
@@ -131,17 +131,17 @@ A easy solution is to store large binary object in s3, and only store the s3 uri
     print(url.html) # should give you new data
     print(url.content) # should give you new data
 
-    # delete item from dynamodb, DON'T DELETE S3 OBJECT
+    # delete item from DynamoDB, DON'T DELETE S3 OBJECT
     url.delete()
 
 **3. How it Works**
 
-In this example, you can pass the raw html to ``url = UrlModel(html="<html>big HTML ...</html>", ...)`` attribute. When writing this item to Dynamodb, it automatically use the sha256 fingerprint of the data in S3 key naming convention, stores the S3 uri to the ``html`` field, and store the html content to S3 object. In other words, same data will be stored at the same S3 location to avoid duplicate traffic. However, it won't delete the S3 object because there might be another item are using the same S3 object.
+In this example, you can pass the raw html to ``url = UrlModel(html="<html>big HTML ...</html>", ...)`` attribute. When writing this item to DynamoDB, it automatically use the sha256 fingerprint of the data in S3 key naming convention, stores the S3 uri to the ``html`` field, and store the html content to S3 object. In other words, same data will be stored at the same S3 location to avoid duplicate traffic. However, it won't delete the S3 object because there might be another item are using the same S3 object.
 
 
 Feature2. Client Side Encryption
 ------------------------------------------------------------------------------
-Dynamodb support encryption at the rest (Server Side Encryption) and use SSL to encryption the transit data (Encrypt at the fly) by default. But you need to spend additional work to enable "Client Side Encryption". ``pynamodb_mate`` made it deadly easy.
+DynamoDB support encryption at the rest (Server Side Encryption) and use SSL to encryption the transit data (Encrypt at the fly) by default. But you need to spend additional work to enable "Client Side Encryption". ``pynamodb_mate`` made it deadly easy.
 
 **1. Define attribute to use Client Side Encryption (AES)**
 
@@ -185,7 +185,7 @@ Dynamodb support encryption at the rest (Server Side Encryption) and use SSL to 
         secret_data.encryption_key = ENCRYPTION_KEY
         secret_data.determinative = False
 
-    # create dynamodb table if not exists, quick skip if already exists
+    # create DynamoDB table if not exists, quick skip if already exists
     ArchiveModel.create_table(wait=True)
 
 **2. Write / Read the Item**
@@ -278,7 +278,7 @@ Sometimes you want to compress the data before store to save DB space. For examp
         image=image,
         items=items,
     )
-    # Save item to Dynamodb
+    # Save item to DynamoDB
     order.save()
 
     # Get the value back and verify
@@ -289,10 +289,10 @@ Sometimes you want to compress the data before store to save DB space. For examp
 
 **3. How it works**
 
-Internally it always use binary for data serialization / deserialization. It convert the original data to binary, and compress it before saving to Dynamodb. It read the data from DynamoDB, decompress it and convert it back to original data to user.
+Internally it always use binary for data serialization / deserialization. It convert the original data to binary, and compress it before saving to DynamoDB. It read the data from DynamoDB, decompress it and convert it back to original data to user.
 
 
-Feature4. AWS Dynamodb Console
+Feature4. AWS DynamoDB Console
 ------------------------------------------------------------------------------
 You can use the following methods to create a URL that can preview your table and items in your browser. This could be very helpful with logging.
 
@@ -302,6 +302,11 @@ You can use the following methods to create a URL that can preview your table an
         print(Model.get_table_overview_console_url())
         print(Model.get_table_items_console_url())
         print(Model(the_hash_key="a", the_range_key=1).item_detail_console_url)
+
+
+Feature 5. DynamoDB Patterns
+------------------------------------------------------------------------------
+``pynamodb_mate`` also provides some commonly used patterns as base ORM models. It is based on the author's working experience dealing with many customers from different industry.
 
 
 .. _install:
@@ -326,3 +331,8 @@ In order to use the following feature, you need to run ``pip install pynamodb_ma
 - ``~pynamodb_mate.EncryptedUnicodeAttribute``
 - ``~pynamodb_mate.EncryptedBinaryAttribute``
 - ``~pynamodb_mate.EncryptedJsonAttribute``
+
+
+Disclaimer
+------------------------------------------------------------------------------
+Even though the author is a Dynamodb Subject Matter Expert in AWS, but this project is NOT an AWS official project, and it is a personal open source project for the Python community.

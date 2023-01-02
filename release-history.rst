@@ -15,6 +15,17 @@ Backlog
 **Miscellaneous**
 
 
+5.3.4.2 (2022-01-01)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Features and Improvements**
+
+- add :mod:`pynamodb_mate.patterns.status_tracker` Pattern. Commonly used when you want to track status of your task in DynamoDB.
+
+**Minor Improvements**
+
+- move unit test to GitHub Action.
+
+
 5.3.4.1 (2022-12-26)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Features and Improvements**
