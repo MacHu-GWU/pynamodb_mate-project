@@ -20,8 +20,6 @@ from pynamodb_mate.patterns.status_tracker import (
     BaseErrors,
 )
 
-from rich import print as rprint
-
 
 @dataclasses.dataclass
 class Data(BaseDataClass):
