@@ -7,7 +7,7 @@
     // the python minor version you use for local development
     "DEV_PY_VER_MINOR": "8",
     // the python micro version you use for local development
-    "DEV_PY_VER_MICRO": "13",
+    "DEV_PY_VER_MICRO": "11",
 
     // if you use readthedocs.org to host your document website
     // it is the project name in your document website domain

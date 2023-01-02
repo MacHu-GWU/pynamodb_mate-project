@@ -2,6 +2,12 @@
     :target: https://pynamodb_mate.readthedocs.io/
     :alt: Documentation Status
 
+.. image:: https://github.com/MacHu-GWU/pynamodb_mate-project/workflows/CI/badge.svg
+    :target: https://github.com/MacHu-GWU/pynamodb_mate-project/actions?query=workflow:CI
+
+.. image:: https://codecov.io/gh/MacHu-GWU/pynamodb_mate-project/branch/master/graph/badge.svg
+    :target: https://codecov.io/gh/MacHu-GWU/pynamodb_mate-project
+
 .. image:: https://img.shields.io/pypi/v/pynamodb_mate.svg
     :target: https://pypi.python.org/pypi/pynamodb_mate
 
