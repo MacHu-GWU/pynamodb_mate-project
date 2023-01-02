@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import pytest
 import botocore.session
 import pynamodb_mate
 from pynamodb_mate.tests import py_ver, BUCKET_NAME
@@ -9,6 +8,8 @@ from pynamodb_mate.helpers import remove_s3_prefix
 
 boto_ses = botocore.session.get_session()
 s3_client = boto_ses.create_client("s3")
+
+prefix = "projects/pynamodb_mate/unit-test/s3backed/"
 
 
 class UrlModel(pynamodb_mate.Model):
@@ -21,16 +22,18 @@ class UrlModel(pynamodb_mate.Model):
 
     html = pynamodb_mate.S3BackedBigTextAttribute()
     html.bucket_name = BUCKET_NAME
+    html.key_template = f"{prefix}/{{fingerprint}}.txt"
     html.s3_client = s3_client
 
     content = pynamodb_mate.S3BackedBigBinaryAttribute()
     content.bucket_name = BUCKET_NAME
+    content.key_template = f"{prefix}/{{fingerprint}}.dat"
     content.s3_client = s3_client
 
 
 def setup_module(module):
     UrlModel.create_table(wait=True)
-    remove_s3_prefix(s3_client, BUCKET_NAME, "pynamodb-mate")
+    remove_s3_prefix(s3_client, BUCKET_NAME, prefix)
 
 
 url = "www.python.org"
