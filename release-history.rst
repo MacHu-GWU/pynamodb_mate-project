@@ -15,6 +15,18 @@ Backlog
 **Miscellaneous**
 
 
+5.3.4.4 (2022-01-02)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Features and Improvements**
+
+- allow user to define a custom ``__post_init__`` method in the DynamoDB ORM model.
+- allow user to define a ``pre_start_hook`` and ``post_start_hook`` in the ``status_tracker`` pattern.
+
+**Miscellaneous**
+
+- update the requirements file to ensure the compatible version of the ``pynamodb`` library.
+
+
 5.3.4.3 (2022-01-02)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Minor Improvements**

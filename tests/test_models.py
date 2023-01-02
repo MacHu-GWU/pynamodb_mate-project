@@ -9,6 +9,19 @@ boto_ses = botocore.session.get_session()
 s3_client = boto_ses.create_client("s3")
 
 
+class Model(pm.Model):
+    class Meta:
+        table_name = f"pynamodb-mate-test-model-{py_ver}"
+        region = "us-east-1"
+        billing_mode = pm.PAY_PER_REQUEST_BILLING_MODE
+
+    hash_key = pm.UnicodeAttribute(hash_key=True)
+    data = pm.JSONAttribute(default=lambda: dict())
+
+    def __post_init__(self):
+        self.data["a"] = 1
+
+
 class Model1(pm.Model):
     class Meta:
         table_name = f"pynamodb-mate-test-model1-{py_ver}"
@@ -38,6 +51,10 @@ def setup_module(module):
 
 
 class TestModel:
+    def test_post_init(self):
+        model = Model(hash_key="a")
+        assert model.data == {"a": 1}
+
     def test_to_dict(self):
         model = Model1(hash_key="a")
 

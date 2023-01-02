@@ -586,6 +586,18 @@ class BaseStatusTracker(Model):
         )
         return self
 
+    def pre_start_hook(self):
+        """
+        A hook function that will be called before the task is started.
+        """
+        pass
+
+    def post_start_hook(self):
+        """
+        A hook function that will be called after the task is finished.
+        """
+        pass
+
     @contextmanager
     def start(
         self,
@@ -607,6 +619,8 @@ class BaseStatusTracker(Model):
         4. If the task failed N times in a row, it will set the status to the
             ``ignore_status``.
         """
+        self.pre_start_hook()
+
         if debug:
             print(
                 "{msg:-^80}".format(
@@ -699,6 +713,8 @@ class BaseStatusTracker(Model):
                         )
                     )
                 )
+
+            self.post_start_hook()
             # print("after finally")
 
     @classmethod

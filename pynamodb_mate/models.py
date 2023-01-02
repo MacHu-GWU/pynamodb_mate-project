@@ -80,6 +80,22 @@ class Model(PynamodbModel):
     Pynamodb Model with additional features.
     """
 
+    def __init__(
+        self,
+        hash_key: T.Optional[T.Any] = None,
+        range_key: T.Optional[T.Any] = None,
+        **attributes,
+    ):
+        super().__init__(hash_key, range_key, **attributes)
+        self.__post_init__()
+
+    def __post_init__(self):
+        """
+        Allow user to customize the post init behavior.
+        For example, it can be used to validate the data.
+        """
+        pass
+
     def to_dict(self, copy=False) -> dict:
         """
         Access the item data as a dictionary.
