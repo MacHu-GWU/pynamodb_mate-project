@@ -3,13 +3,11 @@
 import typing as T
 import enum
 import uuid
-import json
 import traceback
 import dataclasses
 from contextlib import contextmanager
 
 from datetime import datetime, timezone
-from functools import cached_property
 
 from pynamodb.attributes import (
     UnicodeAttribute,
@@ -24,6 +22,7 @@ from pynamodb.indexes import (
 from pynamodb.settings import OperationSettings
 
 from ..models import Model
+from ..compat import cached_property
 
 
 class BaseStatusEnum(int, enum.Enum):
@@ -45,55 +44,6 @@ class BaseStatusEnum(int, enum.Enum):
 
 
 ZERO_PADDING = 4
-
-
-# @attr.s
-# class Data(AttrsClass):
-#     """
-#     :param s3uri: the file S3 URI
-#     :param page_num: the page number of this single page document in the original
-#         document.
-#     :param label_data: arbitrary labeling data
-#     """
-#
-#     s3uri_text: T.Optional[str] = attr.ib(default=None)
-#     s3uri_img: T.Optional[str] = attr.ib(default=None)
-#     page_num: T.Optional[int] = attr.ib(default=None)
-#     label_data: T.Optional[dict] = attr.ib(factory=dict)
-
-
-# @attr.s
-# class DocTypeLabelingTask(AttrsClass):
-#     """
-#     Implement the task id compound string value.
-#
-#     In this doc type labeling job, the task key is a compound value of the
-#     md5 of original document and the page number ``${md5}_${page}``,
-#     with 4 digits zero padding.
-#     """
-#
-#     md5: str = attr.ib()
-#     page_num: int = attr.ib()
-#
-#     @classmethod
-#     def from_task_id(cls, key: str) -> "DocTypeLabelingTask":
-#         """
-#         Parse the task id compound string value.
-#
-#         Example: ``8b6ddf83f87a15f538abb1be1c9e71ec_0001``
-#         """
-#         md5, page_num = key.split("-")
-#         page_num = int(page_num)
-#         return cls(md5, page_num)
-#
-#     @property
-#     def task_id(self) -> str:
-#         """
-#         Generate the task id compound string value.
-#
-#         Example: ``8b6ddf83f87a15f538abb1be1c9e71ec_0001``
-#         """
-#         return f"{self.md5}-{str(self.page_num).zfill(ZERO_PADDING)}"
 
 
 EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
