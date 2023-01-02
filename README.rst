@@ -321,6 +321,7 @@ Status Tracker
 
 It many business critical use case, it is necessary to track every task to know which is succeeded, which is failed and which is still in progress. Some advanced users also wants to:
 
+- Each task should be handled by only one worker, you want a concurrency lock mechanism to avoid double consumption.
 - For those succeeded tasks, store additional information such as the output of the task and log the success time.
 - For those failed task, log the error message for debug, so you can fix the bug and rerun the task.
 - For those failed task, you want to get all of failed tasks by one simple query and rerun with the updated business logic.
