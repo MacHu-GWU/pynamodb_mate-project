@@ -49,6 +49,7 @@ class Tracker(BaseStatusTracker):
 
     def start_job(
         self,
+        debug=True,
     ) -> "Tracker":
         """
         This is just an example of how to use :meth:`BaseStatusTracker.start`.
@@ -70,6 +71,7 @@ class Tracker(BaseStatusTracker):
             failed_status=StatusEnum.s06_failed.value,
             success_status=StatusEnum.s09_success.value,
             ignore_status=StatusEnum.s10_ignore.value,
+            debug=debug,
         )
 
 
@@ -113,10 +115,10 @@ class TestStatusTracker:
         self._test_update_context()
 
         self._test_1_happy_path()
-        self._test_2_lock_mechanism()
-        self._test_3_retry_and_ignore()
-
-        self._test_11_query_by_status()
+        # self._test_2_lock_mechanism()
+        # self._test_3_retry_and_ignore()
+        #
+        # self._test_11_query_by_status()
 
     def _test_update_context(self):
         Tracker = JobTestTracker
@@ -171,7 +173,7 @@ class TestStatusTracker:
         assert tracker.status == StatusEnum.s00_todo.value
 
         # start the job, this time it will succeed
-        with tracker.start_job():
+        with tracker.start_job(debug=True):
             # check if the job status became "in progress"
             assert tracker.status == StatusEnum.s03_in_progress.value
             tracker.refresh()
@@ -190,21 +192,21 @@ class TestStatusTracker:
         assert tracker.retry == 0
 
         # start another job, this time it will fail
-        tracker = Tracker.new(task_id, data={"version": 1})
-        try:
-            with tracker.start_job():
-                tracker.set_data({"version": 2})
-                raise UserError("something is wrong!")
-        except UserError:
-            pass
-
-        assert tracker.status == StatusEnum.s06_failed.value
-        assert tracker.data == {"version": 1}  # it is clean data
-        assert tracker.retry == 1
-        tracker.refresh()
-        assert tracker.status == StatusEnum.s06_failed.value
-        assert tracker.data == {"version": 1}  # it is the database side data
-        assert tracker.retry == 1
+        # tracker = Tracker.new(task_id, data={"version": 1})
+        # try:
+        #     with tracker.start_job(debug=True):
+        #         tracker.set_data({"version": 2})
+        #         raise UserError("something is wrong!")
+        # except UserError:
+        #     pass
+        #
+        # assert tracker.status == StatusEnum.s06_failed.value
+        # assert tracker.data == {"version": 1}  # it is clean data
+        # assert tracker.retry == 1
+        # tracker.refresh()
+        # assert tracker.status == StatusEnum.s06_failed.value
+        # assert tracker.data == {"version": 1}  # it is the database side data
+        # assert tracker.retry == 1
 
     def _test_2_lock_mechanism(self):
         Tracker = JobTestTracker

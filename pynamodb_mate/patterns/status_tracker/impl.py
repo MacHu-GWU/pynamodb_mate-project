@@ -226,6 +226,8 @@ class BaseStatusTracker(Model):
     LOCK_EXPIRE_SECONDS: int = 900
     # the default status code, means "to do", usually start from 0
     DEFAULT_STATUS: int = 0
+    # the status enum class for this tracker
+    STATUS_ENUM: T.Optional[T.Type[BaseStatusEnum]] = None
 
     @classmethod
     def make_key(
@@ -262,6 +264,13 @@ class BaseStatusTracker(Model):
         Return the status value of the task.
         """
         return int(self.value.split(self.SEP)[1])
+
+    @property
+    def status_name(self) -> str:
+        """
+        Return the status name of the task.
+        """
+        return self.STATUS_ENUM.value_to_name(self.status)
 
     @classmethod
     def get_one_or_none(
@@ -574,6 +583,7 @@ class BaseStatusTracker(Model):
         failed_status: int,
         success_status: int,
         ignore_status: int,
+        debug: bool = False,
     ) -> "BaseStatusTracker":
         """
         A context manager to execute a task, and handle error automatically.
@@ -587,6 +597,21 @@ class BaseStatusTracker(Model):
         4. If the task failed N times in a row, it will set the status to the
             ``ignore_status``.
         """
+        if debug:
+            if self.STATUS_ENUM is None:
+                status_name = self.status
+            else:
+                status_name = self.status_name
+            print(
+                "{msg:-^80}".format(
+                    msg=(
+                        f" ▶️ start task(job_id={self.job_id!r}, "
+                        f"task_id={self.task_id!r}, "
+                        f"status={status_name!r}) "
+                    )
+                )
+            )
+
         # Handle concurrent lock
         if self.is_locked():
             raise TaskLockedError(f"Task {self.key} is locked.")
@@ -600,12 +625,14 @@ class BaseStatusTracker(Model):
 
         # mark as in progress
         with self.update_context():
-            (self.set_status(in_process_status).set_update_time().set_locked())
+            self.set_status(in_process_status).set_update_time().set_locked()
 
         try:
             self._setup_update_context()
             # print("before yield")
             yield self
+            if debug:
+                print("✅ task succeeded, update status and unlock the task.")
             # print("after yield")
             (
                 self.set_status(success_status)
@@ -615,7 +642,9 @@ class BaseStatusTracker(Model):
             )
             # print("end of success logic")
         except Exception as e:  # handling user code
-            # print("begin of error handling logic")
+            # print("before error handling")
+            if debug:
+                print("❌ task failed, update status and unlock the task.")
             # reset the update context
             self._teardown_update_context()
             self._setup_update_context()
@@ -633,13 +662,28 @@ class BaseStatusTracker(Model):
             )
             if self.retry >= self.MAX_RETRY:
                 self.set_status(ignore_status)
-            # print("end of error handling logic")
+            # print("after error handling")
             raise e
         finally:
-            # print("begin of finally")
+            # print("before finally")
             self._flush_update_context()
             self._teardown_update_context()
-            # print("end of finally")
+
+            if debug:
+                if self.STATUS_ENUM is None:
+                    status_name = self.status
+                else:
+                    status_name = self.status_name
+                print(
+                    "{msg:-^80}".format(
+                        msg=(
+                            f" ⏹️ end task(job_id={self.job_id!r}, "
+                            f"task_id={self.task_id!r}, "
+                            f"status={status_name!r}) "
+                        )
+                    )
+                )
+            # print("after finally")
 
     @classmethod
     def query_by_status(
