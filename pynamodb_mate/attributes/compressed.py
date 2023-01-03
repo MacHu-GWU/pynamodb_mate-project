@@ -1,54 +1,72 @@
 # -*- coding: utf-8 -*-
 
 """
-Auto-compress and decompress data in DynamoDB
+Auto-compress and decompress data in DynamoDB.
 """
 
+import typing as T
 import gzip
 import json
-from typing import Optional
+
 from pynamodb.attributes import BinaryAttribute
 
 
-class CompressedJSONAttribute(BinaryAttribute):
+class CompressedAttribute(BinaryAttribute):
     """
-    A compressed unicode Attribute.
-
-    Dump to unicode json string, encode to unicode bytes string
-    and compress it internally.
+    CompressedAttribute will serialize the original data to binary format,
+    and compress it before sending to DynamoDB.
     """
 
-    def serialize(self, value) -> Optional[bytes]:
-        return gzip.compress(
-            json.dumps(value, ensure_ascii=False).encode("utf-8")
-        )
+    def user_serializer(self, value: T.Any) -> bytes:  # pragma: no cover
+        """
+        Implement this method to define how you want to convert your data to binary.
+        """
+        raise NotImplementedError
 
-    def deserialize(self, value):
-        return json.loads(gzip.decompress(value).decode("utf-8"), strict=False)
+    def user_deserializer(self, value: bytes) -> T.Any:  # pragma: no cover
+        """
+        Implement this method to define how you want to recover your data from binary.
+        """
+        raise NotImplementedError
 
+    def serialize(self, value: T.Any) -> bytes:
+        return gzip.compress(self.user_serializer(value))
 
-class CompressedUnicodeAttribute(BinaryAttribute):
-    """
-    A compressed unicode Attribute.
-
-    Encode to unicode bytes string and compress it internally.
-    """
-
-    def serialize(self, value: str) -> Optional[bytes]:
-        return gzip.compress(value.encode("utf-8"))
-
-    def deserialize(self, value: bytes) -> Optional[str]:
-        return gzip.decompress(value).decode("utf-8")
+    def deserialize(self, value: bytes) -> T.Any:
+        return self.user_deserializer(gzip.decompress(value))
 
 
-class CompressedBinaryAttribute(BinaryAttribute):
+class CompressedBinaryAttribute(CompressedAttribute):
     """
     A compressed binary Attribute.
-
-    Compress it internally.
     """
-    def serialize(self, value: bytes) -> Optional[bytes]:
-        return gzip.compress(value)
 
-    def deserialize(self, value):
-        return gzip.decompress(value)
+    def user_serializer(self, value: T.Any) -> bytes:
+        return value
+
+    def user_deserializer(self, value: bytes) -> T.Any:
+        return value
+
+
+class CompressedUnicodeAttribute(CompressedAttribute):
+    """
+    A compressed unicode Attribute.
+    """
+
+    def user_serializer(self, value: T.Any) -> bytes:
+        return value.encode("utf-8")
+
+    def user_deserializer(self, value: bytes) -> T.Any:
+        return value.decode("utf-8")
+
+
+class CompressedJSONDictAttribute(CompressedAttribute):
+    """
+    A compressed JSON dict Attribute.
+    """
+
+    def user_serializer(self, value: dict) -> bytes:
+        return json.dumps(value).encode("utf-8")
+
+    def user_deserializer(self, value: bytes) -> dict:
+        return json.loads(value.decode("utf-8"))

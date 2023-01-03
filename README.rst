@@ -71,7 +71,8 @@ Features
 ------------------------------------------------------------------------------
 Click on the link below to see detailed tutorial and examples.
 
-- ⭐ `Store Large Object in DynamoDB <https://github.com/MacHu-GWU/pynamodb_mate-project/blob/master/examples/store-large-object.ipynb>`_: This feature allows you to store any Python object and arbitrary big data in DynamoDB that can exceed the 400KB limit.
+- ⭐ `Store Large Object in DynamoDB <https://github.com/MacHu-GWU/pynamodb_mate-project/blob/master/examples/Store-Large-Object-in-DynamoDB.ipynb>`_: This feature allows you to store any Python object and arbitrary big data in DynamoDB that can exceed the 400KB limit.
+- ⭐ `Client Side Encryption <https://github.com/MacHu-GWU/pynamodb_mate-project/blob/master/examples/Client-Side-Encryption.ipynb>`_: This feature allows you to use your own encryption key to encrypt your data before it is sent to the DynamoDB.
 
 
 Feature 3. Compressed Attribute

@@ -73,9 +73,10 @@ try:
         S3BackedJsonDictAttribute,
     )
     from .attributes.compressed import (
-        CompressedJSONAttribute,
+        CompressedAttribute,
         CompressedUnicodeAttribute,
         CompressedBinaryAttribute,
+        CompressedJSONDictAttribute,
     )
     from .models import Model
 except ImportError as e:  # pragma: no cover

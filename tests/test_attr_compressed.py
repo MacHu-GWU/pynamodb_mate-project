@@ -21,7 +21,7 @@ class OrderModel(pynamodb_mate.Model):
     image = pynamodb_mate.CompressedBinaryAttribute(null=True)
 
     # original value is any json serializable object
-    items = pynamodb_mate.CompressedJSONAttribute(null=True)
+    items = pynamodb_mate.CompressedJSONDictAttribute(null=True)
 
 
 def setup_module(module):

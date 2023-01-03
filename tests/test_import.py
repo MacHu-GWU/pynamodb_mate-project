@@ -39,6 +39,11 @@ def test():
     _ = pynamodb_mate.S3BackedBigTextAttribute
     _ = pynamodb_mate.S3BackedJsonDictAttribute
 
+    _ = pynamodb_mate.CompressedAttribute,
+    _ = pynamodb_mate.CompressedUnicodeAttribute,
+    _ = pynamodb_mate.CompressedBinaryAttribute,
+    _ = pynamodb_mate.CompressedJSONDictAttribute,
+
     _ = pynamodb_mate.SymmetricEncryptedAttribute
     _ = pynamodb_mate.EncryptedNumberAttribute
     _ = pynamodb_mate.EncryptedUnicodeAttribute
