@@ -67,6 +67,7 @@ from pynamodb_mate.patterns.cache.multi_layer import (
 def test_cache(cache: AbstractCache, key: str, value):
     assert cache.get(key) is None
     cache.set(key, value)
+    time.sleep(1)
     assert cache.get(key) == value
 
     cache.set(key, value, expire=1)
