@@ -8,6 +8,10 @@ Backlog
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Features and Improvements**
 
+- add automatically rollback if one of the DynamoDB write or S3 write failed.
+- add an option to delete the S3 object as well when the DynamoDB item is deleted.
+- add lazy load option for S3BackedAttribute.
+
 **Minor Improvements**
 
 **Bugfixes**

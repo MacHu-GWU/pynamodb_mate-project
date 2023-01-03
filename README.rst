@@ -49,7 +49,7 @@
 
 Welcome to ``pynamodb_mate`` Documentation
 ==============================================================================
-- `Full Documentation is Here <https://pynamodb_mate.readthedocs.io/>`_
+📙 `Full Documentation is Here <https://pynamodb_mate.readthedocs.io/>`_
 
 .. contents::
     :class: this-will-duplicate-information-and-it-is-still-useful-here
@@ -60,6 +60,15 @@ Welcome to ``pynamodb_mate`` Documentation
 Overview
 ------------------------------------------------------------------------------
 ``pynamodb_mate`` provides advanced best practice using DynamoDB in python. Built on top of `pynamodb <https://pynamodb.readthedocs.io/en/latest/>`_ python library. It maintain the compatibility to major version of ``pynamodb`` library. For example ``pynamodb_mate>=5.0.0,<6.0.0`` is compatible to ``pynamodb>=5.0.0,<6.0.0``.
+
+
+Disclaimer
+------------------------------------------------------------------------------
+Even though the author is a Dynamodb Subject Matter Expert from AWS, but this project is NOT an AWS official project, and it is a personal open source project for the Python community.
+
+
+Features
+------------------------------------------------------------------------------
 
 
 Feature 1. Store Large Object in DynamoDB
@@ -320,9 +329,9 @@ Cache
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 `See example <https://github.com/MacHu-GWU/pynamodb_mate-project/blob/master/examples/patterns/cache.ipynb>`_
 
-A lots of developer love Redis. However, redis is not a serverless solution, and you need to manage the server (or cluster). **DynamoDB naturally is a serverless, distributive, Key-Value database that has very high read / write throughput. It is a good choice to use DynamoDB as a cache without technique overhead**.
+A lots of developer love Redis. However, redis is not a serverless solution, and you need to manage the server (or cluster). **DynamoDB naturally is a serverless, distributive, Key-Value database that has very high read and write throughput. It is a good choice to use DynamoDB as a cache without technique overhead**.
 
-⭐ Benefit:
+Benefit
 
 - There's no server to manage.
 - DynamoDB has a latency around 20ms per request.
@@ -372,6 +381,4 @@ In order to use the following feature, you need to run ``pip install pynamodb_ma
 - ``pynamodb_mate.EncryptedJsonAttribute``
 
 
-Disclaimer
-------------------------------------------------------------------------------
-Even though the author is a Dynamodb Subject Matter Expert in AWS, but this project is NOT an AWS official project, and it is a personal open source project for the Python community.
+
