@@ -15,6 +15,13 @@ Backlog
 **Miscellaneous**
 
 
+5.3.4.5 (2022-01-02)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Features and Improvements**
+
+- add :mod:`pynamodb_mate.patterns.cache` Pattern. Commonly used when you want to use DynamoDB as a cache.
+
+
 5.3.4.4 (2022-01-02)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Features and Improvements**
