@@ -3,4 +3,5 @@ pytest                              # test framework
 pytest-cov                          # coverage test
 
 # extra
+boto3
 pycryptodome
