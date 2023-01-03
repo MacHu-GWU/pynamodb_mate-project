@@ -50,10 +50,10 @@ class JsonDictInMemoryCache(
     A built-in In memory cache designed to store JSON serializable dict.
     """
 
-    def _serialize(self, value: dict) -> bytes:
+    def serialize(self, value: dict) -> bytes:
         return json.dumps(value).encode("utf-8")
 
-    def _deserialize(self, value: bytes) -> dict:
+    def deserialize(self, value: bytes) -> dict:
         return json.loads(value.decode("utf-8"))
 
 
@@ -64,8 +64,8 @@ class JsonListInMemoryCache(
     A built-in In memory cache designed to store JSON serializable list.
     """
 
-    def _serialize(self, value: list) -> bytes:
+    def serialize(self, value: list) -> bytes:
         return json.dumps(value).encode("utf-8")
 
-    def _deserialize(self, value: bytes) -> list:
+    def deserialize(self, value: bytes) -> list:
         return json.loads(value.decode("utf-8"))

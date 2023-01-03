@@ -40,7 +40,7 @@ class AbstractCache(
     """
 
     @abstractmethod
-    def _serialize(self, value: VALUE) -> bytes:
+    def serialize(self, value: VALUE) -> bytes:
         """
         Abstract serialization function that convert the original value to
         binary data.
@@ -48,7 +48,7 @@ class AbstractCache(
         raise NotImplementedError
 
     @abstractmethod
-    def _deserialize(self, value: bytes) -> VALUE:
+    def deserialize(self, value: bytes) -> VALUE:
         """
         Abstract deserialization function the recover the original value from
         binary data.
@@ -95,7 +95,7 @@ class AbstractCache(
         :param expire: Time-to-live in seconds.
         """
         record = CacheRecord(
-            value=self._serialize(value),
+            value=self.serialize(value),
             expire=expire,
             update_ts=int(utc_now().timestamp()),
         )
@@ -119,8 +119,8 @@ class AbstractCache(
         if record.expire:
             now = utc_now()
             if (now.timestamp() - record.update_ts) < record.expire:
-                return self._deserialize(record.value)
+                return self.deserialize(record.value)
             else:
                 return None
         else:
-            return self._deserialize(record.value)
+            return self.deserialize(record.value)
