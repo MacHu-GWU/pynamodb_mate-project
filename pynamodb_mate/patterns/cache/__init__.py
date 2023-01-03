@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+Use DynamoDB as a cache backend.
+"""
+
 from .backend.in_memory import (
     InMemoryBackend,
     JsonDictInMemoryCache,

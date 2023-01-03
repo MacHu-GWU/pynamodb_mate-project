@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-
+DynamoDB backend for cache.
 """
 
 import typing as T
@@ -26,6 +26,10 @@ class DynamoDBBackend(
     AbstractCache,
     T.Generic[VALUE],
 ):
+    """
+    Base class for DynamoDB cache backend. You have to implement your own
+    ``serialize()`` and ``deserialize()`` methods before use.
+    """
     def __init__(
         self,
         table_name: str,

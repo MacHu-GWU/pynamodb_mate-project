@@ -20,8 +20,8 @@ class InMemoryBackend(
     T.Generic[VALUE],
 ):
     """
-    Base in memory cache backend. You can customize the behavior by adding
-    custom serializer / deserializer.
+    Base class for in-memory cache backend. You have to implement your own
+    ``serialize()`` and ``deserialize()`` methods before use.
     """
 
     def __init__(self):

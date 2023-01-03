@@ -315,6 +315,23 @@ Available patterns:
     :depth: 1
     :local:
 
+
+Cache
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+`See example <https://github.com/MacHu-GWU/pynamodb_mate-project/blob/master/examples/patterns/cache.ipynb>`_
+
+A lots of developer love Redis. However, redis is not a serverless solution, and you need to manage the server (or cluster). **DynamoDB naturally is a serverless, distributive, Key-Value database that has very high read / write throughput. It is a good choice to use DynamoDB as a cache without technique overhead**.
+
+⭐ Benefit:
+
+- There's no server to manage.
+- DynamoDB has a latency around 20ms per request.
+- DynamoDB cache backend can be created in 5 seconds.
+- DynamoDB has pay-as-you-go pricing model, you only pay for what you use.
+- DynamoDB automatically scales up and down to adapt your traffic.
+- Unlike other local cache solutions, it is on cloud and has access management out-of-the-box.
+
+
 Status Tracker
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 `See example <https://github.com/MacHu-GWU/pynamodb_mate-project/blob/master/examples/patterns/status-tracker.ipynb>`_

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Implement an abstract cache backend.
+Implement an abstract cache backend. You can customize your own cache backend.
 """
 
 import typing as T
