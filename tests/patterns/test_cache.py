@@ -46,7 +46,9 @@ from pynamodb_mate.patterns.cache.multi_layer import (
             JsonDictMultiLayerCache(
                 [
                     JsonDictInMemoryCache(),
-                    JsonDictDynamodbCache(table_name=f"pynamodb-mate-test-cache-{py_ver}"),
+                    JsonDictDynamodbCache(
+                        table_name=f"pynamodb-mate-test-cache-{py_ver}"
+                    ),
                 ]
             ),
             "JsonDictMultiLayerCache",
@@ -56,7 +58,9 @@ from pynamodb_mate.patterns.cache.multi_layer import (
             JsonListMultiLayerCache(
                 [
                     JsonListInMemoryCache(),
-                    JsonListDynamodbCache(table_name=f"pynamodb-mate-test-cache-{py_ver}"),
+                    JsonListDynamodbCache(
+                        table_name=f"pynamodb-mate-test-cache-{py_ver}"
+                    ),
                 ]
             ),
             "JsonListMultiLayerCache",

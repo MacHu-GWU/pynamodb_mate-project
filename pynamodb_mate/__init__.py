@@ -67,8 +67,10 @@ except:  # pragma: no cover
 
 try:
     from .attributes.s3backed import (
+        S3BackedAttribute,
         S3BackedBigBinaryAttribute,
         S3BackedBigTextAttribute,
+        S3BackedJsonDictAttribute,
     )
     from .attributes.compressed import (
         CompressedJSONAttribute,
