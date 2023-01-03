@@ -207,6 +207,8 @@ class TestStatusTracker:
         assert tracker.status == StatusEnum.s06_failed.value
         assert tracker.data == {"version": 1}  # it is clean data
         assert tracker.retry == 1
+
+        time.sleep(1)
         tracker.refresh()
         assert tracker.status == StatusEnum.s06_failed.value
         assert tracker.data == {"version": 1}  # it is the database side data
@@ -222,6 +224,7 @@ class TestStatusTracker:
         assert tracker.lock is None
         assert tracker.is_locked() is False
 
+        time.sleep(1)
         tracker = Tracker.get_one_or_none(task_id)
         assert tracker.status == StatusEnum.s00_todo.value
         assert tracker.lock is None
@@ -244,6 +247,7 @@ class TestStatusTracker:
 
         # nothing should happen
         # data is not changed
+        time.sleep(1)
         assert tracker.is_locked() is True
         assert tracker.data == {}
 
