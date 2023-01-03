@@ -11,6 +11,7 @@ Backlog
 - add automatically rollback if one of the DynamoDB write or S3 write failed.
 - add an option to delete the S3 object as well when the DynamoDB item is deleted.
 - add lazy load option for S3BackedAttribute.
+- add ``clear_expired()`` method to DynamoDB cache backend.
 
 **Minor Improvements**
 
@@ -24,6 +25,11 @@ Backlog
 **Features and Improvements**
 
 - add :mod:`pynamodb_mate.patterns.cache` Pattern. Commonly used when you want to use DynamoDB as a cache.
+
+**Miscellaneous**
+
+- improve the document for S3BackedAttribute, EncryptedAttribute and CompressedAttribute.
+- refactor the S3BackedAttribute, EncryptedAttribute and CompressedAttribute to make it easier to customize.
 
 
 5.3.4.4 (2022-01-02)

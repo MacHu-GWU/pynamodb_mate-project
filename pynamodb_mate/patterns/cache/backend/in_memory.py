@@ -36,11 +36,19 @@ class InMemoryBackend(
     def clear_all(self):
         self._cache.clear()
 
-    def clea_expired(self):
+    def clear_expired(self):
         now_ts = utc_now().timestamp()
+
+        to_delete = list()
         for key, record in self._cache.items():
-            if (now_ts - record.update_ts) > record.expire:
-                del self._cache[key]
+            if (
+                record.expire != 0
+                and (now_ts - record.update_ts) > record.expire
+            ):
+                to_delete.append(key)
+
+        for key in to_delete:
+            del self._cache[key]
 
 
 class JsonDictInMemoryCache(

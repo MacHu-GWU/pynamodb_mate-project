@@ -39,7 +39,7 @@ from pynamodb_mate.patterns.cache.multi_layer import (
         ),
         (
             JsonListDynamodbCache(table_name=f"pynamodb-mate-test-cache-{py_ver}"),
-            "JsonListInMemoryCache",
+            "JsonListDynamodbCache",
             [1, 2, 3],
         ),
         (
@@ -79,6 +79,23 @@ def test_cache(cache: AbstractCache, key: str, value):
     assert cache.get(key) == value
     time.sleep(5)
     assert cache.get(key) is None
+
+
+class TestInMemory:
+    def test(self):
+        cache = JsonDictInMemoryCache()
+
+        cache.set("k1", {"a": 1})
+        cache.set("k2", {"a": 2}, expire=1)
+
+        assert len(cache._cache) == 2
+
+        time.sleep(3)
+        cache.clear_expired()
+        assert len(cache._cache) == 1
+
+        cache.clear_all()
+        assert len(cache._cache) == 0
 
 
 if __name__ == "__main__":
