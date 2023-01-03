@@ -62,6 +62,16 @@ def test():
     _ = pynamodb_mate.patterns.status_tracker.BaseErrors
     _ = pynamodb_mate.patterns.status_tracker.BaseStatusTracker
 
+    _ = pynamodb_mate.patterns.cache.InMemoryBackend
+    _ = pynamodb_mate.patterns.cache.JsonDictInMemoryCache
+    _ = pynamodb_mate.patterns.cache.JsonListInMemoryCache
+    _ = pynamodb_mate.patterns.cache.DynamoDBBackend
+    _ = pynamodb_mate.patterns.cache.JsonDictDynamodbCache
+    _ = pynamodb_mate.patterns.cache.JsonListDynamodbCache
+    _ = pynamodb_mate.patterns.cache.MultiLayerCache
+    _ = pynamodb_mate.patterns.cache.JsonDictMultiLayerCache
+    _ = pynamodb_mate.patterns.cache.JsonListMultiLayerCache
+
 
 if __name__ == "__main__":
     import os
