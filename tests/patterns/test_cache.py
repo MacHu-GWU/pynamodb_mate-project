@@ -70,9 +70,10 @@ def test_cache(cache: AbstractCache, key: str, value):
     time.sleep(1)
     assert cache.get(key) == value
 
-    cache.set(key, value, expire=1)
+    cache.set(key, value, expire=3)
+    time.sleep(1)
     assert cache.get(key) == value
-    time.sleep(2)
+    time.sleep(5)
     assert cache.get(key) is None
 
 
