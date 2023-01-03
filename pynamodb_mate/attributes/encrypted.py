@@ -5,29 +5,50 @@ Implement Client Side Encryption Attribute for Unicode, Binary, Numbers and
 Json data.
 """
 
+import typing as T
 import json
 import typing
+
 from pynamodb.attributes import BinaryAttribute
 
 from ..cipher import str_to_key, BaseCipher, AesEcbCipher, AesCtrCipher
 
 
-class SymmetricEncryptedAttribute(object):
+class SymmetricEncryptedAttribute(BinaryAttribute):
     """
-    Symmetric Encrypted Attribute
+    SymmetricEncryptedAttribute will encrypt your data in binary format
+     before sending to DynamoDB.
     """
-    encryption_key = None  # type: str
-    determinative = None  # type: str
 
-    _key = None  # type: bytes
+    def __init__(
+        self,
+        encryption_key: str,
+        determinative: bool = True,
+        hash_key: bool = False,
+        range_key: bool = False,
+        null: T.Optional[bool] = None,
+        default: T.Optional[T.Callable] = None,
+        default_for_new: T.Optional[T.Callable] = None,
+        attr_name: T.Optional[str] = None,
+    ):
+        super().__init__(
+            hash_key=hash_key,
+            range_key=range_key,
+            null=null,
+            default=default,
+            default_for_new=default_for_new,
+            attr_name=attr_name,
+        )
+        self.encryption_key = encryption_key
+        self.determinative = determinative
+        self._key: T.Optional[bytes] = None
+        self._cipher: T.Optional[BaseCipher] = None
 
     @property
     def key(self) -> bytes:
         if self._key is None:
             self._key = str_to_key(self.encryption_key)
         return self._key
-
-    _cipher = None  # type: BaseCipher
 
     @property
     def cipher(self) -> BaseCipher:
@@ -43,39 +64,64 @@ class SymmetricEncryptedAttribute(object):
                 raise ValueError
         return self._cipher
 
+    def user_serializer(self, value: T.Any) -> bytes:  # pragma: no cover
+        """
+        Implement this method to define how you want to convert your data to binary.
+        """
+        raise NotImplementedError
 
-class EncryptedUnicodeAttribute(BinaryAttribute, SymmetricEncryptedAttribute):
+    def user_deserializer(self, value: bytes) -> T.Any:  # pragma: no cover
+        """
+        Implement this method to define how you want to recover your data from binary.
+        """
+        raise NotImplementedError
+
+    def serialize(self, value: T.Any) -> bytes:
+        return self.cipher.encrypt(self.user_serializer(value))
+
+    def deserialize(self, value: bytes) -> T.Any:
+        return self.user_deserializer(self.cipher.decrypt(value))
+
+
+class EncryptedUnicodeAttribute(SymmetricEncryptedAttribute):
     """
     Encrypted Unicode Attribute.
     """
-    def serialize(self, value: str) -> bytes:
-        return self.cipher.encrypt(value.encode("utf-8"))
 
-    def deserialize(self, value: bytes) -> str:
-        return self.cipher.decrypt(value).decode("utf-8")
+    def user_serializer(self, value: str) -> bytes:
+        return value.encode("utf-8")
 
-
-class EncryptedBinaryAttribute(BinaryAttribute, SymmetricEncryptedAttribute):
-    def serialize(self, value: bytes) -> bytes:
-        return self.cipher.encrypt(value)
-
-    def deserialize(self, value: bytes) -> bytes:
-        return self.cipher.decrypt(value)
+    def user_deserializer(self, value: bytes) -> str:
+        return value.decode("utf-8")
 
 
-class EncryptedNumberAttribute(BinaryAttribute, SymmetricEncryptedAttribute):
+class EncryptedBinaryAttribute(SymmetricEncryptedAttribute):
+    def user_serializer(self, value: bytes) -> bytes:
+        return value
+
+    def user_deserializer(self, value: bytes) -> bytes:
+        return value
+
+
+class EncryptedNumberAttribute(SymmetricEncryptedAttribute):
     """
     Encrypted Number Attribute.
     """
-    def serialize(self, value: typing.Union[int, float]) -> bytes:
-        return self.cipher.encrypt(json.dumps(value).encode("ascii"))
 
-    def deserialize(self, value: bytes) -> typing.Union[int, float]:
-        return json.loads(self.cipher.decrypt(value).decode("ascii"))
+    def user_serializer(self, value: typing.Union[int, float]) -> bytes:
+        return json.dumps(value).encode("ascii")
+
+    def user_deserializer(self, value: bytes) -> typing.Union[int, float]:
+        return json.loads(value.decode("ascii"))
 
 
-class EncryptedJsonAttribute(EncryptedNumberAttribute):
+class EncryptedJsonDictAttribute(SymmetricEncryptedAttribute):
     """
     Encrypted JSON data Attribute.
     """
-    pass
+
+    def user_serializer(self, value: dict) -> bytes:
+        return json.dumps(value).encode("utf-8")
+
+    def user_deserializer(self, value: bytes) -> dict:
+        return json.loads(value.decode("utf-8"))

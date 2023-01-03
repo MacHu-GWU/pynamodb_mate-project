@@ -86,10 +86,11 @@ except:  # pragma: no cover
 
 try:
     from .attributes.encrypted import (
+        SymmetricEncryptedAttribute,
         EncryptedNumberAttribute,
         EncryptedUnicodeAttribute,
         EncryptedBinaryAttribute,
-        EncryptedJsonAttribute,
+        EncryptedJsonDictAttribute,
     )
 except ImportError as e:  # pragma: no cover
     pass

@@ -1,38 +1,43 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-import pynamodb_mate
+import pynamodb_mate as pm
 from pynamodb_mate.tests import py_ver
 
 ENCRYPTION_KEY = "my-password"
 
 
-class ArchiveModel(pynamodb_mate.Model):
+class ArchiveModel(pm.Model):
     class Meta:
         table_name = f"pynamodb-mate-test-archive-{py_ver}"
         region = "us-east-1"
-        billing_mode = pynamodb_mate.PAY_PER_REQUEST_BILLING_MODE
+        billing_mode = pm.PAY_PER_REQUEST_BILLING_MODE
 
-    aid = pynamodb_mate.UnicodeAttribute(hash_key=True)
-    secret_message = pynamodb_mate.EncryptedUnicodeAttribute()
-    secret_message.encryption_key = ENCRYPTION_KEY
-    secret_message.determinative = True
+    aid = pm.UnicodeAttribute(hash_key=True)
+    secret_message = pm.EncryptedUnicodeAttribute(
+        encryption_key=ENCRYPTION_KEY,
+        determinative=True,
+    )
 
-    secret_binary = pynamodb_mate.EncryptedBinaryAttribute()
-    secret_binary.encryption_key = ENCRYPTION_KEY
-    secret_binary.determinative = False
+    secret_binary = pm.EncryptedBinaryAttribute(
+        encryption_key=ENCRYPTION_KEY,
+        determinative=False,
+    )
 
-    secret_integer = pynamodb_mate.EncryptedNumberAttribute()
-    secret_integer.encryption_key = ENCRYPTION_KEY
-    secret_integer.determinative = True
+    secret_integer = pm.EncryptedNumberAttribute(
+        encryption_key=ENCRYPTION_KEY,
+        determinative=True,
+    )
 
-    secret_float = pynamodb_mate.EncryptedNumberAttribute()
-    secret_float.encryption_key = ENCRYPTION_KEY
-    secret_float.determinative = False
+    secret_float = pm.EncryptedNumberAttribute(
+        encryption_key=ENCRYPTION_KEY,
+        determinative=False,
+    )
 
-    secret_data = pynamodb_mate.EncryptedJsonAttribute()
-    secret_data.encryption_key = ENCRYPTION_KEY
-    secret_data.determinative = False
+    secret_data = pm.EncryptedJsonDictAttribute(
+        encryption_key=ENCRYPTION_KEY,
+        determinative=False,
+    )
 
 
 def setup_module(module):
@@ -87,4 +92,4 @@ class TestEncryptUnicode(object):
 if __name__ == "__main__":
     from pynamodb_mate.tests import run_cov_test
 
-    run_cov_test(__file__, "pynamodb_mate.attributes.encrypted")
+    run_cov_test(__file__, "pynamodb_mate.attributes.encrypted", preview=False)
