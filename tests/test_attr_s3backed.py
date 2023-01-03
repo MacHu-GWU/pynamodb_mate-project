@@ -2,6 +2,7 @@
 
 import boto3
 import pytest
+import time
 
 import pynamodb_mate
 from pynamodb_mate.tests import py_ver, BUCKET_NAME
@@ -75,6 +76,7 @@ class TestS3BackedBigTextAttribute:
                 UrlModel.data.set(new_data),
             ]
         )
+        time.sleep(1)
         url_model.refresh()
         assert url_model.html == new_html
         assert url_model.content == new_content
