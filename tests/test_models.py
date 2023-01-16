@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 
+import typing as T
 from datetime import datetime, timezone
-import botocore.session
+import moto
 import pynamodb_mate as pm
-from pynamodb_mate.tests import py_ver
-
-boto_ses = botocore.session.get_session()
-s3_client = boto_ses.create_client("s3")
+from pynamodb_mate.tests import py_ver, BaseTest
 
 
 class Model(pm.Model):
@@ -43,14 +41,20 @@ class Model2(pm.Model):
     data = pm.JSONAttribute(default=lambda: dict())
 
 
-def setup_module(module):
-    Model1.create_table(wait=True)
-    Model2.create_table(wait=True)
-    Model1.delete_all()
-    Model2.delete_all()
+class TestModel(BaseTest):
+    @classmethod
+    def setup_class(cls):
+        cls.mock_start()
 
+        Model1.create_table(wait=True)
+        Model2.create_table(wait=True)
+        Model1.delete_all()
+        Model2.delete_all()
 
-class TestModel:
+    @classmethod
+    def teardown_class(cls):
+        cls.mock_stop()
+
     def test_post_init(self):
         model = Model(hash_key="a")
         assert model.data == {"a": 1}
@@ -91,6 +95,20 @@ class TestModel:
             "data": {},
         }
 
+    def test_iter(self):
+        Model1.delete_all()
+        with Model1.batch_write() as batch:
+            for id in range(1, 1 + 10):
+                model = Model1(hash_key=str(id), data={"value": id})
+                batch.save(model)
+
+        iterator = Model1.iter_query(hash_key="1")
+        assert iterator.one().data == {"value": 1}
+
+        iterator = Model1.iter_scan()
+        for item in iterator:
+            assert item.hash_key == str(item.data["value"])
+
     def test_delete_if_exists(self):
         model = Model1(hash_key="delete-if-exists")
         assert model.delete_if_exists() is False
@@ -130,4 +148,4 @@ class TestModel:
 if __name__ == "__main__":
     from pynamodb_mate.tests import run_cov_test
 
-    run_cov_test(__file__, "pynamodb_mate.models")
+    run_cov_test(__file__, "pynamodb_mate.models", preview=False)

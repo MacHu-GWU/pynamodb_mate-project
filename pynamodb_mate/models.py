@@ -7,11 +7,11 @@ Enhance the pynamodb.models.Model class.
 import typing as T
 import copy as copy_lib
 
-from pynamodb.models import (
-    Model as PynamodbModel,
-)
+from iterproxy import IterProxy
+from pynamodb.models import Model as PynamodbModel
 from pynamodb.settings import OperationSettings
 from pynamodb.exceptions import DeleteError
+from pynamodb.expressions.condition import Condition
 
 
 class ConsoleUrlMaker:
@@ -74,6 +74,27 @@ class ConsoleUrlMaker:
 
 console_url_maker = ConsoleUrlMaker()
 
+
+# class DynamodbItemIterProxy(IterProxy):
+#     def __next__(self) -> "S3Path":
+#         return super(S3PathIterProxy, self).__next__()
+#
+#     def one(self) -> "S3Path":
+#         return super(S3PathIterProxy, self).one()
+#
+#     def one_or_none(self) -> T.Union["S3Path", None]:
+#         return super(S3PathIterProxy, self).one_or_none()
+#
+#     def many(self, k: int) -> T.List["S3Path"]:
+#         return super(S3PathIterProxy, self).many(k)
+#
+#     def all(self) -> T.List["S3Path"]:
+#         return super(S3PathIterProxy, self).all()
+#
+#     def skip(self, k: int) -> "S3PathIterProxy":
+#         return super(S3PathIterProxy, self).skip(k=k)
+
+_T = T.TypeVar('_T', bound='Model')
 
 class Model(PynamodbModel):
     """
@@ -194,3 +215,67 @@ class Model(PynamodbModel):
             range_key_value = getattr(self, range_key_name)
             kwargs["range_key"] = range_key_attr.serialize(range_key_value)
         return console_url_maker.item_detail(**kwargs)
+
+    @classmethod
+    def iter_scan(
+        cls: T.Type[_T],
+        filter_condition: T.Optional[Condition] = None,
+        segment: T.Optional[int] = None,
+        total_segments: T.Optional[int] = None,
+        limit: T.Optional[int] = None,
+        last_evaluated_key: T.Optional[T.Dict[str, T.Dict[str, T.Any]]] = None,
+        page_size: T.Optional[int] = None,
+        consistent_read: T.Optional[bool] = None,
+        index_name: T.Optional[str] = None,
+        rate_limit: T.Optional[float] = None,
+        attributes_to_get: T.Optional[T.Sequence[str]] = None,
+        settings: OperationSettings = OperationSettings.default,
+    ) -> IterProxy[_T]:
+        return IterProxy(
+            cls.scan(
+                filter_condition=filter_condition,
+                segment=segment,
+                total_segments=total_segments,
+                limit=limit,
+                last_evaluated_key=last_evaluated_key,
+                page_size=page_size,
+                consistent_read=consistent_read,
+                index_name=index_name,
+                rate_limit=rate_limit,
+                attributes_to_get=attributes_to_get,
+                settings=settings,
+            )
+        )
+
+    @classmethod
+    def iter_query(
+        cls: T.Type[_T],
+        hash_key: T.Any,
+        range_key_condition: T.Optional[Condition] = None,
+        filter_condition: T.Optional[Condition] = None,
+        consistent_read: bool = False,
+        index_name: T.Optional[str] = None,
+        scan_index_forward: T.Optional[bool] = None,
+        limit: T.Optional[int] = None,
+        last_evaluated_key: T.Optional[T.Dict[str, T.Dict[str, T.Any]]] = None,
+        attributes_to_get: T.Optional[T.Iterable[str]] = None,
+        page_size: T.Optional[int] = None,
+        rate_limit: T.Optional[float] = None,
+        settings: OperationSettings = OperationSettings.default,
+    ) -> IterProxy[_T]:
+        return IterProxy(
+            cls.query(
+                hash_key=hash_key,
+                range_key_condition=range_key_condition,
+                filter_condition=filter_condition,
+                consistent_read=consistent_read,
+                index_name=index_name,
+                scan_index_forward=scan_index_forward,
+                limit=limit,
+                last_evaluated_key=last_evaluated_key,
+                attributes_to_get=attributes_to_get,
+                page_size=page_size,
+                rate_limit=rate_limit,
+                settings=settings,
+            )
+        )

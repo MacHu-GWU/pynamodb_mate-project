@@ -4,48 +4,55 @@ import boto3
 import pytest
 import time
 
+import moto
 import pynamodb_mate
-from pynamodb_mate.tests import py_ver, BUCKET_NAME
+from pynamodb_mate.tests import py_ver, BUCKET_NAME, BaseTest
 from pynamodb_mate.helpers import remove_s3_prefix
 
 
 prefix = "projects/pynamodb_mate/unit-test/s3backed/"
-s3_client = boto3.client("s3")
+
+with moto.mock_s3():
+    s3_client = boto3.client("s3")
+
+    class UrlModel(pynamodb_mate.Model):
+        class Meta:
+            table_name = f"pynamodb-mate-test-url-{py_ver}"
+            region = "us-east-1"
+            billing_mode = pynamodb_mate.PAY_PER_REQUEST_BILLING_MODE
+
+        url = pynamodb_mate.UnicodeAttribute(hash_key=True)
+
+        html = pynamodb_mate.S3BackedBigTextAttribute(
+            bucket_name=BUCKET_NAME,
+            key_template=f"{prefix}{{fingerprint}}.html",
+            s3_client=s3_client,
+        )
+
+        content = pynamodb_mate.S3BackedBigBinaryAttribute(
+            bucket_name=BUCKET_NAME,
+            key_template=f"{prefix}{{fingerprint}}.dat",
+            s3_client=s3_client,
+        )
+
+        data = pynamodb_mate.S3BackedJsonDictAttribute(
+            bucket_name=BUCKET_NAME,
+            key_template=f"{prefix}{{fingerprint}}.json",
+            compressed=False,
+            s3_client=s3_client,
+        )
 
 
-class UrlModel(pynamodb_mate.Model):
-    class Meta:
-        table_name = f"pynamodb-mate-test-url-{py_ver}"
-        region = "us-east-1"
-        billing_mode = pynamodb_mate.PAY_PER_REQUEST_BILLING_MODE
-
-    url = pynamodb_mate.UnicodeAttribute(hash_key=True)
-
-    html = pynamodb_mate.S3BackedBigTextAttribute(
-        bucket_name=BUCKET_NAME,
-        key_template=f"{prefix}{{fingerprint}}.html",
-        s3_client=s3_client,
-    )
-
-    content = pynamodb_mate.S3BackedBigBinaryAttribute(
-        bucket_name=BUCKET_NAME,
-        key_template=f"{prefix}{{fingerprint}}.dat",
-        s3_client=s3_client,
-    )
-
-    data = pynamodb_mate.S3BackedJsonDictAttribute(
-        bucket_name=BUCKET_NAME,
-        key_template=f"{prefix}{{fingerprint}}.json",
-        compressed=False,
-        s3_client=s3_client,
-    )
-
-
-class TestS3BackedBigTextAttribute:
+class TestS3BackedBigTextAttribute(BaseTest):
     @classmethod
     def setup_class(cls):
-        UrlModel.create_table(wait=True)
+        cls.mock_start()
+
+        s3_client = boto3.client("s3")
+        s3_client.create_bucket(Bucket=BUCKET_NAME)
         remove_s3_prefix(s3_client, BUCKET_NAME, prefix)
+
+        UrlModel.create_table(wait=True)
 
     def test(self):
         url = "www.python.org"

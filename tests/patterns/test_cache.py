@@ -3,7 +3,7 @@
 import time
 
 import pytest
-from pynamodb_mate.tests import py_ver
+from pynamodb_mate.tests import py_ver, BaseTest
 from pynamodb_mate.patterns.cache.abstract import AbstractCache
 from pynamodb_mate.patterns.cache.backend.in_memory import (
     JsonDictInMemoryCache,
@@ -19,69 +19,7 @@ from pynamodb_mate.patterns.cache.multi_layer import (
 )
 
 
-@pytest.mark.parametrize(
-    "cache,key,value",
-    [
-        (
-            JsonDictInMemoryCache(),
-            "JsonDictInMemoryCache",
-            {"a": 1},
-        ),
-        (
-            JsonListInMemoryCache(),
-            "JsonListInMemoryCache",
-            [1, 2, 3],
-        ),
-        (
-            JsonDictDynamodbCache(table_name=f"pynamodb-mate-test-cache-{py_ver}"),
-            "JsonDictDynamodbCache",
-            {"a": 1},
-        ),
-        (
-            JsonListDynamodbCache(table_name=f"pynamodb-mate-test-cache-{py_ver}"),
-            "JsonListDynamodbCache",
-            [1, 2, 3],
-        ),
-        (
-            JsonDictMultiLayerCache(
-                [
-                    JsonDictInMemoryCache(),
-                    JsonDictDynamodbCache(
-                        table_name=f"pynamodb-mate-test-cache-{py_ver}"
-                    ),
-                ]
-            ),
-            "JsonDictMultiLayerCache",
-            {"a": 1},
-        ),
-        (
-            JsonListMultiLayerCache(
-                [
-                    JsonListInMemoryCache(),
-                    JsonListDynamodbCache(
-                        table_name=f"pynamodb-mate-test-cache-{py_ver}"
-                    ),
-                ]
-            ),
-            "JsonListMultiLayerCache",
-            [1, 2, 3],
-        ),
-    ],
-)
-def test_cache(cache: AbstractCache, key: str, value):
-    assert cache.get(key) is None
-    cache.set(key, value)
-    time.sleep(1)
-    assert cache.get(key) == value
-
-    cache.set(key, value, expire=3)
-    time.sleep(1)
-    assert cache.get(key) == value
-    time.sleep(5)
-    assert cache.get(key) is None
-
-
-class TestInMemory:
+class TestInMemoryCache:
     def test(self):
         cache = JsonDictInMemoryCache()
 
@@ -96,6 +34,70 @@ class TestInMemory:
 
         cache.clear_all()
         assert len(cache._cache) == 0
+
+
+class TestCache(BaseTest):
+    def run_cache_test_case(self, cache: AbstractCache, key: str, value):
+        assert cache.get(key) is None
+        cache.set(key, value)
+        time.sleep(1)
+        assert cache.get(key) == value
+
+        cache.set(key, value, expire=3)
+        time.sleep(1)
+        assert cache.get(key) == value
+        time.sleep(5)
+        assert cache.get(key) is None
+
+    def test_cache(self):
+        args = [
+            (
+                JsonDictInMemoryCache(),
+                "JsonDictInMemoryCache",
+                {"a": 1},
+            ),
+            (
+                JsonListInMemoryCache(),
+                "JsonListInMemoryCache",
+                [1, 2, 3],
+            ),
+            (
+                JsonDictDynamodbCache(table_name=f"pynamodb-mate-test-cache-{py_ver}"),
+                "JsonDictDynamodbCache",
+                {"a": 1},
+            ),
+            (
+                JsonListDynamodbCache(table_name=f"pynamodb-mate-test-cache-{py_ver}"),
+                "JsonListDynamodbCache",
+                [1, 2, 3],
+            ),
+            (
+                JsonDictMultiLayerCache(
+                    [
+                        JsonDictInMemoryCache(),
+                        JsonDictDynamodbCache(
+                            table_name=f"pynamodb-mate-test-cache-{py_ver}"
+                        ),
+                    ]
+                ),
+                "JsonDictMultiLayerCache",
+                {"a": 1},
+            ),
+            (
+                JsonListMultiLayerCache(
+                    [
+                        JsonListInMemoryCache(),
+                        JsonListDynamodbCache(
+                            table_name=f"pynamodb-mate-test-cache-{py_ver}"
+                        ),
+                    ]
+                ),
+                "JsonListMultiLayerCache",
+                [1, 2, 3],
+            ),
+        ]
+        for cache, key, value in args:
+            self.run_cache_test_case(cache, key, value)
 
 
 if __name__ == "__main__":

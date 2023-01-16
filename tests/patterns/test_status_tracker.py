@@ -6,7 +6,7 @@ import dataclasses
 import pytest
 
 from pynamodb.models import PAY_PER_REQUEST_BILLING_MODE
-from pynamodb_mate.tests import py_ver
+from pynamodb_mate.tests import py_ver, BaseTest
 from pynamodb_mate.patterns.status_tracker import (
     BaseStatusEnum,
     StatusAndTaskIdIndex,
@@ -106,9 +106,11 @@ class TestStatusEnum:
         ]
 
 
-class TestStatusTracker:
+class TestStatusTracker(BaseTest):
     @classmethod
     def setup_class(cls):
+        cls.mock_start()
+
         Tracker.create_table(wait=True)
         Tracker.delete_all()
         print(f"preview items: {Tracker.get_table_items_console_url()}")

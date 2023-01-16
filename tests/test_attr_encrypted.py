@@ -2,7 +2,7 @@
 
 import pytest
 import pynamodb_mate as pm
-from pynamodb_mate.tests import py_ver
+from pynamodb_mate.tests import py_ver, BaseTest
 
 ENCRYPTION_KEY = "my-password"
 
@@ -50,7 +50,15 @@ def count_result(result):
     return result.total_count
 
 
-class TestEncryptUnicode(object):
+class TestEncryptUnicode(BaseTest):
+    @classmethod
+    def setup_class(cls):
+        cls.mock_start()
+
+    @classmethod
+    def teardown_class(cls):
+        cls.mock_stop()
+
     def test(self):
         # Test encryption / decryption
         msg = "attack at 2PM tomorrow!"
