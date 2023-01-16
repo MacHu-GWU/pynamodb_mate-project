@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import moto
+from pynamodb.connection import Connection
 
 
 class BaseTest:
@@ -14,6 +15,8 @@ class BaseTest:
 
         cls.mock_s3.start()
         cls.mock_dynamodb.start()
+
+        Connection()
 
     @classmethod
     def mock_stop(cls):
