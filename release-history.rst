@@ -20,6 +20,18 @@ Backlog
 **Miscellaneous**
 
 
+5.3.4.6 (2022-01-16)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Features and Improvements**
+
+- Use iterproxy for query and scan.
+- Enable type hint in query and scan results.
+
+**Miscellaneous**
+
+- use ``moto`` for unit test
+
+
 5.3.4.5 (2022-01-02)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Features and Improvements**

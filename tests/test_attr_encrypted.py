@@ -40,10 +40,6 @@ class ArchiveModel(pm.Model):
     )
 
 
-def setup_module(module):
-    ArchiveModel.create_table(wait=True)
-
-
 def count_result(result):
     for i in result:
         pass
@@ -51,6 +47,11 @@ def count_result(result):
 
 
 class TestEncryptUnicode(BaseTest):
+    @classmethod
+    def setup_class(cls):
+        cls.mock_start()
+        ArchiveModel.create_table(wait=True)
+
     def test(self):
         # Test encryption / decryption
         msg = "attack at 2PM tomorrow!"
