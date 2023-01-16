@@ -51,10 +51,6 @@ class TestModel(BaseTest):
         Model1.delete_all()
         Model2.delete_all()
 
-    @classmethod
-    def teardown_class(cls):
-        cls.mock_stop()
-
     def test_post_init(self):
         model = Model(hash_key="a")
         assert model.data == {"a": 1}

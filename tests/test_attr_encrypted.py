@@ -51,14 +51,6 @@ def count_result(result):
 
 
 class TestEncryptUnicode(BaseTest):
-    @classmethod
-    def setup_class(cls):
-        cls.mock_start()
-
-    @classmethod
-    def teardown_class(cls):
-        cls.mock_stop()
-
     def test(self):
         # Test encryption / decryption
         msg = "attack at 2PM tomorrow!"

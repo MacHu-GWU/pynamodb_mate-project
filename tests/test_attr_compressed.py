@@ -32,10 +32,6 @@ class TestCompressedAttribute(BaseTest):
         # Create table if not exists
         OrderModel.create_table(wait=True)
 
-    @classmethod
-    def teardown_class(cls):
-        cls.mock_stop()
-
     def test_io_good_case(self):
         # Create an item
         order_id = "order_001"
