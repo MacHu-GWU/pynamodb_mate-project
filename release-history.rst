@@ -24,8 +24,8 @@ Backlog
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Features and Improvements**
 
-- Use iterproxy for query and scan.
-- Enable type hint in query and scan results.
+- Use iterproxy for Model query and scan, enable type hint in result iterator.
+- Use iterproxy for Model query and scan, enable type hint in result iterator.
 
 **Miscellaneous**
 

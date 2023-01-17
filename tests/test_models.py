@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import typing as T
 from datetime import datetime, timezone
-import moto
+
 import pynamodb_mate as pm
 from pynamodb_mate.tests import py_ver, BaseTest
 

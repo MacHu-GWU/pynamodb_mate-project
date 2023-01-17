@@ -8,7 +8,9 @@ import typing as T
 import copy as copy_lib
 
 from iterproxy import IterProxy
+
 from pynamodb.models import Model as PynamodbModel
+from pynamodb.indexes import GlobalSecondaryIndex, LocalSecondaryIndex
 from pynamodb.settings import OperationSettings
 from pynamodb.exceptions import DeleteError
 from pynamodb.expressions.condition import Condition
@@ -74,31 +76,14 @@ class ConsoleUrlMaker:
 
 console_url_maker = ConsoleUrlMaker()
 
+_T = T.TypeVar("_T", bound="Model")
 
-# class DynamodbItemIterProxy(IterProxy):
-#     def __next__(self) -> "S3Path":
-#         return super(S3PathIterProxy, self).__next__()
-#
-#     def one(self) -> "S3Path":
-#         return super(S3PathIterProxy, self).one()
-#
-#     def one_or_none(self) -> T.Union["S3Path", None]:
-#         return super(S3PathIterProxy, self).one_or_none()
-#
-#     def many(self, k: int) -> T.List["S3Path"]:
-#         return super(S3PathIterProxy, self).many(k)
-#
-#     def all(self) -> T.List["S3Path"]:
-#         return super(S3PathIterProxy, self).all()
-#
-#     def skip(self, k: int) -> "S3PathIterProxy":
-#         return super(S3PathIterProxy, self).skip(k=k)
-
-_T = T.TypeVar('_T', bound='Model')
 
 class Model(PynamodbModel):
     """
     Pynamodb Model with additional features.
+
+    .. versionadded:: 5.1.0.1
     """
 
     def __init__(
@@ -120,6 +105,8 @@ class Model(PynamodbModel):
     def to_dict(self, copy=False) -> dict:
         """
         Access the item data as a dictionary.
+
+        .. versionadded:: 5.3.4.1
         """
         if copy:
             return copy_lib.deepcopy(self.attribute_values)
@@ -137,6 +124,8 @@ class Model(PynamodbModel):
     ) -> T.Optional["Model"]:
         """
         Get one Dynamodb item object or None if not exists.
+
+        .. versionadded:: 5.3.4.1
         """
         try:
             return cls.get(
@@ -152,6 +141,8 @@ class Model(PynamodbModel):
     def delete_if_exists(self) -> bool:
         """
         Delete the item if exists. Return True if exists.
+
+        .. versionadded:: 5.3.4.1
         """
         hash_key_attr = self.__class__._hash_key_attribute()
         range_key_attr = self.__class__._range_key_attribute()
@@ -168,6 +159,8 @@ class Model(PynamodbModel):
     def delete_all(cls) -> int:
         """
         Delete all item in a Dynamodb table by scanning all item and delete.
+
+        .. versionadded:: 5.3.4.1
         """
         ith = 0
         with cls.batch_write() as batch:
@@ -179,6 +172,8 @@ class Model(PynamodbModel):
     def get_table_overview_console_url(cls) -> str:
         """
         Create the AWS Console url that can preview Dynamodb Table settings.
+
+        .. versionadded:: 5.2.1.1
         """
         return console_url_maker.table_overview(
             region_name=cls.Meta.region,
@@ -189,6 +184,8 @@ class Model(PynamodbModel):
     def get_table_items_console_url(cls) -> str:
         """
         Create the AWS Console url that can preview items in Dynamodb Table.
+
+        .. versionadded:: 5.2.1.1
         """
         return console_url_maker.table_items(
             region_name=cls.Meta.region,
@@ -199,6 +196,8 @@ class Model(PynamodbModel):
     def item_detail_console_url(self) -> str:
         """
         Return the AWS Console url that can preview Dynamodb item data.
+
+        .. versionadded:: 5.2.1.1
         """
         klass = self.__class__
         hash_key_name = klass._hash_keyname
@@ -231,6 +230,12 @@ class Model(PynamodbModel):
         attributes_to_get: T.Optional[T.Sequence[str]] = None,
         settings: OperationSettings = OperationSettings.default,
     ) -> IterProxy[_T]:
+        """
+        Similar to the ``Model.scan()`` method, but it returns
+        a more user-friendly iterator with type hint.
+
+        .. versionadded:: 5.3.4.6
+        """
         return IterProxy(
             cls.scan(
                 filter_condition=filter_condition,
@@ -263,6 +268,12 @@ class Model(PynamodbModel):
         rate_limit: T.Optional[float] = None,
         settings: OperationSettings = OperationSettings.default,
     ) -> IterProxy[_T]:
+        """
+        Similar to the ``Model.query()`` method, but it returns
+        a more user-friendly iterator with type hint.
+
+        .. versionadded:: 5.3.4.6
+        """
         return IterProxy(
             cls.query(
                 hash_key=hash_key,
@@ -277,5 +288,81 @@ class Model(PynamodbModel):
                 page_size=page_size,
                 rate_limit=rate_limit,
                 settings=settings,
+            )
+        )
+
+    @classmethod
+    def iter_scan_index(
+        cls: T.Type[_T],
+        index: T.Union[GlobalSecondaryIndex, LocalSecondaryIndex],
+        filter_condition: T.Optional[Condition] = None,
+        segment: T.Optional[int] = None,
+        total_segments: T.Optional[int] = None,
+        limit: T.Optional[int] = None,
+        last_evaluated_key: T.Optional[T.Dict[str, T.Dict[str, T.Any]]] = None,
+        page_size: T.Optional[int] = None,
+        consistent_read: T.Optional[bool] = None,
+        rate_limit: T.Optional[float] = None,
+        attributes_to_get: T.Optional[T.List[str]] = None,
+    ) -> IterProxy[_T]:
+        """
+        Similar to the ``Index.scan()`` method, but it returns
+        a more user-friendly iterator with type hint.
+
+        :param index: the ``GlobalSecondaryIndex`` or ``LocalSecondaryIndex`` object,
+            usually it is a class attribute of your ``Model`` attribute.
+
+        .. versionadded:: 5.3.4.6
+        """
+        return IterProxy(
+            index.scan(
+                filter_condition=filter_condition,
+                segment=segment,
+                total_segments=total_segments,
+                limit=limit,
+                last_evaluated_key=last_evaluated_key,
+                page_size=page_size,
+                consistent_read=consistent_read,
+                rate_limit=rate_limit,
+                attributes_to_get=attributes_to_get,
+            )
+        )
+
+    @classmethod
+    def iter_query_index(
+        cls: T.Type[_T],
+        index: T.Union[GlobalSecondaryIndex, LocalSecondaryIndex],
+        hash_key: T.Any,
+        range_key_condition: T.Optional[Condition] = None,
+        filter_condition: T.Optional[Condition] = None,
+        consistent_read: T.Optional[bool] = False,
+        scan_index_forward: T.Optional[bool] = None,
+        limit: T.Optional[int] = None,
+        last_evaluated_key: T.Optional[T.Dict[str, T.Dict[str, T.Any]]] = None,
+        attributes_to_get: T.Optional[T.List[str]] = None,
+        page_size: T.Optional[int] = None,
+        rate_limit: T.Optional[float] = None,
+    ) -> IterProxy[_T]:
+        """
+        Similar to the ``Index.scan()`` method, but it returns
+        a more user-friendly iterator with type hint.
+
+        :param index: the ``GlobalSecondaryIndex`` or ``LocalSecondaryIndex`` object,
+            usually it is a class attribute of your ``Model`` attribute.
+
+        .. versionadded:: 5.3.4.6
+        """
+        return IterProxy(
+            index.query(
+                hash_key=hash_key,
+                range_key_condition=range_key_condition,
+                filter_condition=filter_condition,
+                consistent_read=consistent_read,
+                scan_index_forward=scan_index_forward,
+                limit=limit,
+                last_evaluated_key=last_evaluated_key,
+                attributes_to_get=attributes_to_get,
+                page_size=page_size,
+                rate_limit=rate_limit,
             )
         )
