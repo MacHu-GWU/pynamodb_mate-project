@@ -2,7 +2,6 @@
 
 import time
 
-import pytest
 from pynamodb_mate.tests import py_ver, BaseTest
 from pynamodb_mate.patterns.cache.abstract import AbstractCache
 from pynamodb_mate.patterns.cache.backend.in_memory import (

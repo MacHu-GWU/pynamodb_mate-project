@@ -340,14 +340,12 @@ class TestStatusTracker(BaseTest):
             assert len(res) == 1
             assert res[0].task_id == f"t-{ith}"
 
-        res = list(
-            Tracker.query_by_status(
-                [
-                    StatusEnum.s00_todo.value,
-                    StatusEnum.s06_failed.value,
-                ]
-            )
-        )
+        res = Tracker.query_by_status(
+            [
+                StatusEnum.s00_todo.value,
+                StatusEnum.s06_failed.value,
+            ]
+        ).all()
         assert len(res) == 2
         assert res[0].task_id == f"t-1"
         assert res[1].task_id == f"t-3"

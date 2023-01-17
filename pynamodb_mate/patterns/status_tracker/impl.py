@@ -14,6 +14,7 @@ from contextlib import contextmanager
 
 from datetime import datetime, timezone
 
+from iterproxy import IterProxy
 from pynamodb.attributes import (
     UnicodeAttribute,
     NumberAttribute,
@@ -625,7 +626,7 @@ class BaseStatusTracker(Model):
             print(
                 "{msg:-^80}".format(
                     msg=(
-                        f" ▶️ start task(job_id={self.job_id!r}, "
+                        f" ⏩ start task(job_id={self.job_id!r}, "
                         f"task_id={self.task_id!r}, "
                         f"status={self.status_name!r}) "
                     )
@@ -732,12 +733,12 @@ class BaseStatusTracker(Model):
             return cls._status_and_task_id_index
 
     @classmethod
-    def query_by_status(
+    def _query_by_status(
         cls,
         status: T.Union[int, T.List[int]],
         limit: int = 10,
         job_id: T.Optional[str] = None,
-    ) -> T.Iterable["BaseStatusTracker"]:
+    ) -> IterProxy["BaseStatusTracker"]:
         """
         Get task items by status.
         """
@@ -751,3 +752,18 @@ class BaseStatusTracker(Model):
                 hash_key=cls.make_value(status, JOB_ID),
                 limit=limit,
             )
+
+    @classmethod
+    def query_by_status(
+        cls,
+        status: T.Union[int, T.List[int]],
+        limit: int = 10,
+        job_id: T.Optional[str] = None,
+    ) -> IterProxy["BaseStatusTracker"]:
+        return IterProxy(
+            cls._query_by_status(
+                status=status,
+                limit=limit,
+                job_id=job_id,
+            )
+        )
