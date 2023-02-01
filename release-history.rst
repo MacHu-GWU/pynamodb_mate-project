@@ -20,7 +20,24 @@ Backlog
 **Miscellaneous**
 
 
-5.3.4.6 (2022-01-16)
+5.3.4.7 (2023-02-01)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Features and Improvements**
+
+- :class:`~pynamodb_mate.patterns.status_tracker.impl.BaseStatusTracker` added ``create_time`` attribute.
+- :class:`~pynamodb_mate.patterns.status_tracker.impl.StatusAndTaskIdIndex` is renamed to :class:`~pynamodb_mate.patterns.status_tracker.impl.StatusAndCreateTimeIndex`, and the index now uses ``create_time`` as the range key, and it now uses AllProjection.
+- :meth:`pynamodb_mate.patterns.status_tracker.impl.BaseStatusTracker.query_by_status` add ``older_task_first`` parameter.
+
+**Minor Improvements**
+
+- improve logging in :meth:`pynamodb_mate.patterns.status_tracker.impl.BaseStatusTracker.start`.
+
+**Bugfixes**
+
+**Miscellaneous**
+
+
+5.3.4.6 (2023-01-16)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Features and Improvements**
 
