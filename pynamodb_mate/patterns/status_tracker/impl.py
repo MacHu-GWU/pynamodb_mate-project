@@ -23,7 +23,7 @@ from pynamodb.attributes import (
 )
 from pynamodb.indexes import (
     GlobalSecondaryIndex,
-    KeysOnlyProjection,
+    AllProjection,
 )
 from pynamodb.settings import OperationSettings
 
@@ -78,9 +78,6 @@ class BaseStatusEnum(int, enum.Enum):
         return [status.value for status in cls]
 
 
-ZERO_PADDING = 4
-
-
 EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 
@@ -91,17 +88,25 @@ def utc_now() -> datetime:
     return datetime.utcnow().replace(tzinfo=timezone.utc)
 
 
-class StatusAndTaskIdIndex(GlobalSecondaryIndex):
+class StatusAndCreateTimeIndex(GlobalSecondaryIndex):
     """
     GSI for query by job_id and status.
+
+    .. versionchanged:: 5.3.4.7
+
+        1. ``StatusAndTaskIdIndex`` is renamed to ``StatusAndCreateTimeIndex``
+        2. it now uses ``create_time`` as the range key.
+        3. it now uses AllProjection
     """
 
     class Meta:
-        index_name = "status_and_task_id-index"
-        projection = KeysOnlyProjection()
+        index_name = "status_and_create_time-index"
+        projection = AllProjection()
 
     value: T.Union[str, UnicodeAttribute] = UnicodeAttribute(hash_key=True)
-    key: T.Union[str, UnicodeAttribute] = UnicodeAttribute(range_key=True)
+    create_time: T.Union[datetime, UTCDateTimeAttribute] = UTCDateTimeAttribute(
+        range_key=True
+    )
 
 
 class TaskLockedError(Exception):
@@ -169,15 +174,14 @@ class BaseStatusTracker(Model):
     The DynamoDB ORM model for the status tracking. You can use one
     DynamoDB table for multiple status tracking jobs.
 
-    TODO: explain what is the problem this pattern is trying to solve.
-
     Concepts:
 
     - job: a high-level description of a job, the similar task on different
         items will be grouped into one job. ``job_id`` is the unique identifier
         for a job.
     - task: a specific task on a specific item. ``task_id`` is the unique identifier
-        for a task.
+        for a task. Within the same job, ``task_id`` has to be unique. But it can
+        be duplicated across different jobs.
     - status: an integer value to indicate the status of a task. The closer to
         the end, the value should be larger, so we can compare the values.
 
@@ -193,10 +197,18 @@ class BaseStatusTracker(Model):
     :param lock_time: when this task is locked.
     :param data: arbitrary data in python dictionary.
     :param errors: arbitrary error data in python dictionary.
+
+
+    .. versionchanged:: 5.3.4.7
+
+        1. added ``create_time`` attribute.
     """
 
     key: T.Union[str, UnicodeAttribute] = UnicodeAttribute(hash_key=True)
     value: T.Union[str, UnicodeAttribute] = UnicodeAttribute()
+    create_time: T.Union[datetime, UTCDateTimeAttribute] = UTCDateTimeAttribute(
+        default=utc_now,
+    )
     update_time: T.Union[datetime, UTCDateTimeAttribute] = UTCDateTimeAttribute(
         default=utc_now,
     )
@@ -217,7 +229,7 @@ class BaseStatusTracker(Model):
         null=True,
     )
 
-    _status_and_task_id_index: T.Optional[StatusAndTaskIdIndex] = None
+    _status_and_create_time_index: T.Optional[StatusAndCreateTimeIndex] = None
 
     # one DynamoDB table can serve multiple jobs
     # if you defined a default job id for the table
@@ -243,6 +255,9 @@ class BaseStatusTracker(Model):
         task_id: str,
         job_id: T.Optional[str] = None,
     ) -> str:
+        """
+        Join the job_id and task_id to create the DynamoDB hash key.
+        """
         JOB_ID = cls.JOB_ID if job_id is None else job_id
         return f"{JOB_ID}{cls.SEP}{task_id}"
 
@@ -252,6 +267,9 @@ class BaseStatusTracker(Model):
         status: int,
         job_id: T.Optional[str] = None,
     ) -> str:
+        """
+        Join the job_id and status to create the ``value`` attribute.
+        """
         JOB_ID = cls.JOB_ID if job_id is None else job_id
         return f"{JOB_ID}{cls.SEP}{str(status).zfill(cls.STATUS_ZERO_PAD)}"
 
@@ -276,7 +294,10 @@ class BaseStatusTracker(Model):
     @property
     def status_name(self) -> str:
         """
-        Return the status name of the task.
+        Return the status name of the task. If you don't set the Status enum
+        class to the ``STATUS_ENUM`` class attribute, it returns the integer
+        value of the status. If you did so, it returns the human-friendly
+        status name.
         """
         if self.STATUS_ENUM is None:
             return str(self.status)
@@ -626,7 +647,7 @@ class BaseStatusTracker(Model):
             print(
                 "{msg:-^80}".format(
                     msg=(
-                        f" ⏩ start task(job_id={self.job_id!r}, "
+                        f" ▶️ start task(job_id={self.job_id!r}, "
                         f"task_id={self.task_id!r}, "
                         f"status={self.status_name!r}) "
                     )
@@ -639,6 +660,10 @@ class BaseStatusTracker(Model):
 
         # Handle ignore status
         if self.status == ignore_status:
+            if debug:
+                print(
+                    f"↪️ the task is ignored, do nothing!"
+                )
             raise TaskIgnoredError(
                 f"Task {self.key} retry count already exceeded {self.MAX_RETRY}, "
                 f"ignore it."
@@ -646,20 +671,23 @@ class BaseStatusTracker(Model):
 
         # mark as in progress
         with self.update_context():
-            self.set_status(in_process_status).set_update_time().set_locked()
             if debug:
-                print(f"🔓 set status {self.status_name!r} and lock the task.")
+                print(
+                    f"🔓 set status {self.STATUS_ENUM.value_to_name(in_process_status)!r} "
+                    f"and lock the task."
+                )
+            (self.set_status(in_process_status).set_update_time().set_locked())
 
         try:
             self._setup_update_context()
             # print("before yield")
             yield self
+            # print("after yield")
             if debug:
                 print(
                     f"✅ 🔐 task succeeded, "
-                    f"set status {self.status_name!r} and unlock the task."
+                    f"set status {self.STATUS_ENUM.value_to_name(success_status)!r} and unlock the task."
                 )
-            # print("after yield")
             (
                 self.set_status(success_status)
                 .set_update_time()
@@ -672,9 +700,22 @@ class BaseStatusTracker(Model):
             # reset the update context
             self._teardown_update_context()
             self._setup_update_context()
-            (
+            if (self.retry + 1) >= self.MAX_RETRY:
+                if debug:
+                    print(
+                        f"❌ 🔐 task failed {self.MAX_RETRY} times already, "
+                        f"set status {self.STATUS_ENUM.value_to_name(ignore_status)!r} and unlock the task."
+                    )
+                self.set_status(ignore_status)
+            else:
+                if debug:
+                    print(
+                        f"❌ 🔐 task failed, "
+                        f"set stats {self.STATUS_ENUM.value_to_name(failed_status)!r} and unlock the task."
+                    )
                 self.set_status(failed_status)
-                .set_update_time()
+            (
+                self.set_update_time()
                 .set_unlock()
                 .set_errors(
                     {
@@ -684,19 +725,6 @@ class BaseStatusTracker(Model):
                 )
                 .set_retry_plus_one()
             )
-            if self.retry >= self.MAX_RETRY:
-                self.set_status(ignore_status)
-                if debug:
-                    print(
-                        f"❌ 🔐 task failed {self.MAX_RETRY} times already, "
-                        f"set status {self.status_name!r} and unlock the task."
-                    )
-            else:
-                if debug:
-                    print(
-                        f"❌ 🔐 task failed, "
-                        f"set stats {self.status_name!r} and unlock the task."
-                    )
             # print("after error handling")
             raise e
         finally:
@@ -719,24 +747,25 @@ class BaseStatusTracker(Model):
             # print("after finally")
 
     @classmethod
-    def _get_status_index(cls) -> StatusAndTaskIdIndex:
+    def _get_status_index(cls) -> StatusAndCreateTimeIndex:
         """
         Detect the status index object.
         """
-        if cls._status_and_task_id_index is None:
+        if cls._status_and_create_time_index is None:
             for k, v in inspect.getmembers(cls):
-                if isinstance(v, StatusAndTaskIdIndex):
-                    cls._status_and_task_id_index = v
-                    return cls._status_and_task_id_index
+                if isinstance(v, StatusAndCreateTimeIndex):
+                    cls._status_and_create_time_index = v
+                    return cls._status_and_create_time_index
             raise ValueError("you haven't defined a StatusAndTaskIdIndex")
         else:
-            return cls._status_and_task_id_index
+            return cls._status_and_create_time_index
 
     @classmethod
     def _query_by_status(
         cls,
         status: T.Union[int, T.List[int]],
         limit: int = 10,
+        older_task_first: bool = True,
         job_id: T.Optional[str] = None,
     ) -> IterProxy["BaseStatusTracker"]:
         """
@@ -750,6 +779,7 @@ class BaseStatusTracker(Model):
         for status in status_list:
             yield from cls._get_status_index().query(
                 hash_key=cls.make_value(status, JOB_ID),
+                scan_index_forward=older_task_first,
                 limit=limit,
             )
 
@@ -758,12 +788,26 @@ class BaseStatusTracker(Model):
         cls,
         status: T.Union[int, T.List[int]],
         limit: int = 10,
+        older_task_first: bool = True,
         job_id: T.Optional[str] = None,
     ) -> IterProxy["BaseStatusTracker"]:
+        """
+        Query tasks by status code.
+
+        :param status: single status code or list of status code
+        :param limit: for each status code, how many items you want to return
+        :param older_task_first: sort task by create_time in ascending or descending order
+        :param job_id:
+
+        .. versionchanged:: 5.3.4.7
+
+            ``older_task_first`` parameter.
+        """
         return IterProxy(
             cls._query_by_status(
                 status=status,
                 limit=limit,
+                older_task_first=older_task_first,
                 job_id=job_id,
             )
         )

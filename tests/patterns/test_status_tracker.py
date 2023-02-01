@@ -9,7 +9,7 @@ from pynamodb.models import PAY_PER_REQUEST_BILLING_MODE
 from pynamodb_mate.tests import py_ver, BaseTest
 from pynamodb_mate.patterns.status_tracker import (
     BaseStatusEnum,
-    StatusAndTaskIdIndex,
+    StatusAndCreateTimeIndex,
     BaseStatusTracker,
     TaskLockedError,
     TaskIgnoredError,
@@ -45,7 +45,7 @@ class Tracker(BaseStatusTracker):
         region = "us-east-1"
         billing_mode = PAY_PER_REQUEST_BILLING_MODE
 
-    status_and_task_id_index = StatusAndTaskIdIndex()
+    status_and_task_id_index = StatusAndCreateTimeIndex()
 
     STATUS_ENUM = StatusEnum
 

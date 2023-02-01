@@ -65,7 +65,7 @@ def test():
     _ = pynamodb_mate.post_dynamodb_send
 
     _ = pynamodb_mate.patterns.status_tracker.BaseStatusEnum
-    _ = pynamodb_mate.patterns.status_tracker.StatusAndTaskIdIndex
+    _ = pynamodb_mate.patterns.status_tracker.StatusAndCreateTimeIndex
     _ = pynamodb_mate.patterns.status_tracker.TaskLockedError
     _ = pynamodb_mate.patterns.status_tracker.TaskIgnoredError
     _ = pynamodb_mate.patterns.status_tracker.BaseData
