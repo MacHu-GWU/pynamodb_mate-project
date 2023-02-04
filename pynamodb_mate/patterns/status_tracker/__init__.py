@@ -7,7 +7,7 @@ retry, catch up, etc ...
 
 from .impl import (
     BaseStatusEnum,
-    StatusAndCreateTimeIndex,
+    StatusAndUpdateTimeIndex,
     TaskLockedError,
     TaskIgnoredError,
     BaseData,

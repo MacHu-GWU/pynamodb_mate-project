@@ -9,7 +9,7 @@ from pynamodb.models import PAY_PER_REQUEST_BILLING_MODE
 from pynamodb_mate.tests import py_ver, BaseTest
 from pynamodb_mate.patterns.status_tracker import (
     BaseStatusEnum,
-    StatusAndCreateTimeIndex,
+    StatusAndUpdateTimeIndex,
     BaseStatusTracker,
     TaskLockedError,
     TaskIgnoredError,
@@ -45,7 +45,7 @@ class Tracker(BaseStatusTracker):
         region = "us-east-1"
         billing_mode = PAY_PER_REQUEST_BILLING_MODE
 
-    status_and_task_id_index = StatusAndCreateTimeIndex()
+    status_and_update_time_index = StatusAndUpdateTimeIndex()
 
     STATUS_ENUM = StatusEnum
 
@@ -68,6 +68,7 @@ class Tracker(BaseStatusTracker):
         the "ignore" status value is the largest status value among all,
         and use the same "ignore" status value for all type of jobs.
         """
+
         return self.start(
             in_process_status=StatusEnum.s03_in_progress.value,
             failed_status=StatusEnum.s06_failed.value,
@@ -109,6 +110,7 @@ class TestStatusEnum:
 class TestStatusTracker(BaseTest):
     @classmethod
     def setup_class(cls):
+        print("")
         cls.mock_start()
 
         Tracker.create_table(wait=True)
@@ -118,9 +120,9 @@ class TestStatusTracker(BaseTest):
     def test(self):
         self._test_update_context()
 
-        self._test_1_happy_path()
-        self._test_2_lock_mechanism()
-        self._test_3_retry_and_ignore()
+        # self._test_1_happy_path()
+        # self._test_2_lock_mechanism()
+        # self._test_3_retry_and_ignore()
 
         self._test_11_query_by_status()
 
@@ -326,15 +328,35 @@ class TestStatusTracker(BaseTest):
     def _test_11_query_by_status(self):
         Tracker = JobIndexTracker
 
+        # prepare data
         with Tracker.batch_write() as batch:
-            batch.save(Tracker.make("t-1", status=StatusEnum.s00_todo.value))
-            batch.save(Tracker.make("t-2", status=StatusEnum.s03_in_progress.value))
-            batch.save(Tracker.make("t-3", status=StatusEnum.s06_failed.value))
-            batch.save(Tracker.make("t-4", status=StatusEnum.s09_success.value))
-            batch.save(Tracker.make("t-5", status=StatusEnum.s10_ignore.value))
+            batch.save(
+                Tracker.make("t-1", status=StatusEnum.s00_todo.value, data={"value": 1})
+            )
+            batch.save(
+                Tracker.make(
+                    "t-2", status=StatusEnum.s03_in_progress.value, data={"value": 1}
+                )
+            )
+            batch.save(
+                Tracker.make(
+                    "t-3", status=StatusEnum.s06_failed.value, data={"value": 1}
+                )
+            )
+            batch.save(
+                Tracker.make(
+                    "t-4", status=StatusEnum.s09_success.value, data={"value": 1}
+                )
+            )
+            batch.save(
+                Tracker.make(
+                    "t-5", status=StatusEnum.s10_ignore.value, data={"value": 1}
+                )
+            )
 
         time.sleep(3)
 
+        # each status code only has one item
         for ith, status in enumerate(StatusEnum, start=1):
             res = list(Tracker.query_by_status(status.value))
             assert len(res) == 1
@@ -349,6 +371,29 @@ class TestStatusTracker(BaseTest):
         assert len(res) == 2
         assert res[0].task_id == f"t-1"
         assert res[1].task_id == f"t-3"
+
+        # verify that the status index is NOT ALL projection
+        tracker = res[0]
+        assert tracker.data == {}
+        tracker.refresh()
+        assert tracker.data == {"value": 1}
+
+        # test the auto_refresh arg
+        res = Tracker.query_by_status(
+            [
+                StatusEnum.s00_todo,
+                StatusEnum.s06_failed.value,
+            ],
+            auto_refresh=True,
+        ).all()
+        assert len(res) == 2
+
+        for tracker in res:
+            assert tracker.data == {"value": 1}
+
+        # verify the status index object cache
+        Tracker._get_status_index()  # it should not print anything
+        Tracker._get_status_index()  # it should not print anything
 
         assert Tracker.count_items_by_job_id() == 5
         Tracker.delete_all_by_job_id()

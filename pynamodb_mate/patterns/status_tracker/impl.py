@@ -23,7 +23,7 @@ from pynamodb.attributes import (
 )
 from pynamodb.indexes import (
     GlobalSecondaryIndex,
-    AllProjection,
+    IncludeProjection,
 )
 from pynamodb.settings import OperationSettings
 
@@ -78,6 +78,16 @@ class BaseStatusEnum(int, enum.Enum):
         return [status.value for status in cls]
 
 
+def ensure_status_value(status: T.Union[int, BaseStatusEnum]) -> int:
+    """
+    Ensure it returns a integer value of a status.
+    """
+    if isinstance(status, BaseStatusEnum):
+        return status.value
+    else:
+        return status
+
+
 EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 
@@ -88,7 +98,7 @@ def utc_now() -> datetime:
     return datetime.utcnow().replace(tzinfo=timezone.utc)
 
 
-class StatusAndCreateTimeIndex(GlobalSecondaryIndex):
+class StatusAndUpdateTimeIndex(GlobalSecondaryIndex):
     """
     GSI for query by job_id and status.
 
@@ -97,14 +107,20 @@ class StatusAndCreateTimeIndex(GlobalSecondaryIndex):
         1. ``StatusAndTaskIdIndex`` is renamed to ``StatusAndCreateTimeIndex``
         2. it now uses ``create_time`` as the range key.
         3. it now uses AllProjection
+
+    .. versionchanged:: 5.3.4.8
+
+        1. ``StatusAndCreateTimeIndex`` is renamed to ``StatusAndUpdateTimeIndex``
+        2. it now uses ``update_time`` as the range key.
+        3. it now uses IncludeProjection
     """
 
     class Meta:
-        index_name = "status_and_create_time-index"
-        projection = AllProjection()
+        index_name = "status_and_update_time-index"
+        projection = IncludeProjection(["create_time"])
 
     value: T.Union[str, UnicodeAttribute] = UnicodeAttribute(hash_key=True)
-    create_time: T.Union[datetime, UTCDateTimeAttribute] = UTCDateTimeAttribute(
+    update_time: T.Union[datetime, UTCDateTimeAttribute] = UTCDateTimeAttribute(
         range_key=True
     )
 
@@ -191,6 +207,7 @@ class BaseStatusTracker(Model):
         job_id and task_id. The format is ``{job_id}{separator}{task_id}``
     :param value: Indicate the status of the task. The format is
         ``{job_id}{separator}{status_code}``.
+    :param update_time: when the task item is created
     :param update_time: when the task status is updated
     :param retry: how many times the task has been retried
     :param lock: a concurrency control mechanism. It is an uuid string.
@@ -229,7 +246,7 @@ class BaseStatusTracker(Model):
         null=True,
     )
 
-    _status_and_create_time_index: T.Optional[StatusAndCreateTimeIndex] = None
+    _status_and_update_time_index: T.Optional[StatusAndUpdateTimeIndex] = None
 
     # one DynamoDB table can serve multiple jobs
     # if you defined a default job id for the table
@@ -643,6 +660,11 @@ class BaseStatusTracker(Model):
         """
         self.pre_start_hook()
 
+        in_process_status = ensure_status_value(in_process_status)
+        failed_status = ensure_status_value(failed_status)
+        success_status = ensure_status_value(success_status)
+        ignore_status = ensure_status_value(ignore_status)
+
         if debug:
             print(
                 "{msg:-^80}".format(
@@ -661,9 +683,7 @@ class BaseStatusTracker(Model):
         # Handle ignore status
         if self.status == ignore_status:
             if debug:
-                print(
-                    f"↪️ the task is ignored, do nothing!"
-                )
+                print(f"↪️ the task is ignored, do nothing!")
             raise TaskIgnoredError(
                 f"Task {self.key} retry count already exceeded {self.MAX_RETRY}, "
                 f"ignore it."
@@ -747,23 +767,28 @@ class BaseStatusTracker(Model):
             # print("after finally")
 
     @classmethod
-    def _get_status_index(cls) -> StatusAndCreateTimeIndex:
+    def _get_status_index(cls) -> StatusAndUpdateTimeIndex:
         """
         Detect the status index object.
         """
-        if cls._status_and_create_time_index is None:
+        if cls._status_and_update_time_index is None:
+            # just for local unit test, keep it in the source code intentionally
+            # print("call _get_status_index() ...")
             for k, v in inspect.getmembers(cls):
-                if isinstance(v, StatusAndCreateTimeIndex):
-                    cls._status_and_create_time_index = v
-                    return cls._status_and_create_time_index
-            raise ValueError("you haven't defined a StatusAndTaskIdIndex")
+                if isinstance(v, StatusAndUpdateTimeIndex):
+                    cls._status_and_update_time_index = v
+                    return cls._status_and_update_time_index
+            raise ValueError("you haven't defined a 'StatusAndCreateTimeIndex'")
         else:
-            return cls._status_and_create_time_index
+            return cls._status_and_update_time_index
 
     @classmethod
     def _query_by_status(
         cls,
-        status: T.Union[int, T.List[int]],
+        status: T.Union[
+            T.Union[int, BaseStatusEnum],
+            T.List[T.Union[int, BaseStatusEnum]],
+        ],
         limit: int = 10,
         older_task_first: bool = True,
         job_id: T.Optional[str] = None,
@@ -771,12 +796,17 @@ class BaseStatusTracker(Model):
         """
         Get task items by status.
         """
+        # pre process arguments
         JOB_ID = cls.JOB_ID if job_id is None else job_id
+
         if isinstance(status, list):
             status_list = status
         else:
             status_list = [status]
-        for status in status_list:
+        processed_status_list = [ensure_status_value(status) for status in status_list]
+
+        # use index to query by status and aggregate the results
+        for status in processed_status_list:
             yield from cls._get_status_index().query(
                 hash_key=cls.make_value(status, JOB_ID),
                 scan_index_forward=older_task_first,
@@ -786,28 +816,44 @@ class BaseStatusTracker(Model):
     @classmethod
     def query_by_status(
         cls,
-        status: T.Union[int, T.List[int]],
+        status: T.Union[
+            T.Union[int, BaseStatusEnum],
+            T.List[T.Union[int, BaseStatusEnum]],
+        ],
         limit: int = 10,
         older_task_first: bool = True,
         job_id: T.Optional[str] = None,
+        auto_refresh: bool = False,
     ) -> IterProxy["BaseStatusTracker"]:
         """
         Query tasks by status code.
 
         :param status: single status code or list of status code
         :param limit: for each status code, how many items you want to return
-        :param older_task_first: sort task by create_time in ascending or descending order
+        :param older_task_first: sort task by update_time in ascending or descending order
         :param job_id:
 
         .. versionchanged:: 5.3.4.7
 
-            ``older_task_first`` parameter.
+            add ``older_task_first`` parameter. it sorts task by create_time
+
+        .. versionchanged:: 5.3.4.8
+
+            it sorts task by update_time
         """
-        return IterProxy(
-            cls._query_by_status(
-                status=status,
-                limit=limit,
-                older_task_first=older_task_first,
-                job_id=job_id,
-            )
+        result_iterator = cls._query_by_status(
+            status=status,
+            limit=limit,
+            older_task_first=older_task_first,
+            job_id=job_id,
         )
+
+        def new_iterator():
+            for item in result_iterator:
+                item.refresh()
+                yield item
+
+        if auto_refresh:
+            return IterProxy(new_iterator())
+        else:
+            return IterProxy(result_iterator)
