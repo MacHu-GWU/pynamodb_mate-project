@@ -20,6 +20,19 @@ Backlog
 **Miscellaneous**
 
 
+5.3.4.8 (2023-02-03)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Features and Improvements**
+
+- :class:`~pynamodb_mate.patterns.status_tracker.impl.BaseStatusTracker` added ``create_time`` attribute.
+- :class:`~pynamodb_mate.patterns.status_tracker.impl.StatusAndCreateTimeIndex` is renamed to :class:`~pynamodb_mate.patterns.status_tracker.impl.StatusAndUpdateTimeIndex`, and the index now uses ``update_time`` as the range key, and it now uses IncludeProjection.
+- :meth:`pynamodb_mate.patterns.status_tracker.impl.BaseStatusTracker.query_by_status` add ``auto_refresh`` parameter.
+
+**Minor Improvements**
+
+- :meth:`pynamodb_mate.patterns.status_tracker.impl.BaseStatusTracker.query_by_status` now take both status enum or status enum value.
+
+
 5.3.4.7 (2023-02-01)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Features and Improvements**
