@@ -17,6 +17,8 @@
 .. image:: https://img.shields.io/pypi/pyversions/pynamodb_mate.svg
     :target: https://pypi.python.org/pypi/pynamodb_mate
 
+.. image:: https://img.shields.io/pypi/dm/pynamodb-mate.svg
+
 .. image:: https://img.shields.io/badge/STAR_Me_on_GitHub!--None.svg?style=social
     :target: https://github.com/MacHu-GWU/pynamodb_mate-project
 
