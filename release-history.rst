@@ -20,6 +20,13 @@ Backlog
 **Miscellaneous**
 
 
+5.3.4.9 (2023-05-15)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Bugfixes**
+
+- fix a but that some usages of :meth:`~pynamodb_mate.patterns.status_tracker.impl.BaseStatusTracker.make_value` are missing the parameter job_id.
+
+
 5.3.4.8 (2023-02-03)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Features and Improvements**

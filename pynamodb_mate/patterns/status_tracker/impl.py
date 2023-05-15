@@ -369,7 +369,7 @@ class BaseStatusTracker(Model):
         JOB_ID = cls.JOB_ID if job_id is None else job_id
         kwargs = dict(
             key=cls.make_key(task_id, JOB_ID),
-            value=cls.make_value(status),
+            value=cls.make_value(status, JOB_ID),
         )
         if data is not None:
             kwargs["data"] = data
@@ -508,7 +508,7 @@ class BaseStatusTracker(Model):
             self.value = self.make_value(self.job_id, ...)
         """
         _update_context[self.key]["value"] = {"old": self.value}
-        self.value = self.make_value(status)
+        self.value = self.make_value(status, self.job_id)
         _update_context[self.key]["value"]["new"] = self.value
         _update_context[self.key]["value"]["act"] = BaseStatusTracker.value.set(
             self.value
