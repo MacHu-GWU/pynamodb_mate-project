@@ -55,6 +55,8 @@ jobs:
       # create an CODECOV_TOKEN env var in GitHub actions secret
       - name: "Upload coverage to Codecov"
         if: "${{ contains(env.USING_COVERAGE, matrix.python-version) && github.ref == 'refs/heads/main' }}"
-        uses: "codecov/codecov-action@v3" # https://github.com/marketplace/actions/codecov-action
+        uses: "codecov/codecov-action@v4" # https://github.com/marketplace/actions/codecov
         with:
           fail_ci_if_error: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
