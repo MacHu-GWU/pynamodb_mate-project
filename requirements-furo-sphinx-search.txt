@@ -1,0 +1,2 @@
+# enable readthedocs sphinx search for furo theme
+furo-sphinx-search @ git+https://github.com/MacHu-GWU/furo-sphinx-search@main

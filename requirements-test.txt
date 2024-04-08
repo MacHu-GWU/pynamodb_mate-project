@@ -4,7 +4,8 @@ pytest-cov                          # coverage test
 
 # extra
 boto3
-pycryptodome
+pycryptodome>=3.18.0,<4.0.0
 
 # mock boto3
+moto>=4.1.12,<5.0.0
 moto[dynamodb,s3]

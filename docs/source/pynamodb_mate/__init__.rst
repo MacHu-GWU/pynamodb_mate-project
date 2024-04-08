@@ -12,7 +12,6 @@ sub packages and modules
 
     attributes <attributes/__init__>
     patterns <patterns/__init__>
-    _version <_version>
     cipher <cipher>
     compat <compat>
     helpers <helpers>

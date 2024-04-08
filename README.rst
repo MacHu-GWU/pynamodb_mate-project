@@ -1,5 +1,5 @@
 .. image:: https://readthedocs.org/projects/pynamodb_mate/badge/?version=latest
-    :target: https://pynamodb_mate.readthedocs.io/
+    :target: https://pynamodb-mate.readthedocs.io/
     :alt: Documentation Status
 
 .. image:: https://github.com/MacHu-GWU/pynamodb_mate-project/workflows/CI/badge.svg
@@ -25,13 +25,13 @@
 ------
 
 .. image:: https://img.shields.io/badge/Link-Document-blue.svg
-      :target: https://pynamodb_mate.readthedocs.io/
+      :target: https://pynamodb-mate.readthedocs.io/
 
 .. image:: https://img.shields.io/badge/Link-API-blue.svg
-      :target: https://pynamodb_mate.readthedocs.io/py-modindex.html
+      :target: https://pynamodb-mate.readthedocs.io/py-modindex.html
 
 .. image:: https://img.shields.io/badge/Link-Source_Code-blue.svg
-      :target: https://pynamodb_mate.readthedocs.io/py-modindex.html
+      :target: https://pynamodb-mate.readthedocs.io/py-modindex.html
 
 .. image:: https://img.shields.io/badge/Link-Install-blue.svg
       :target: `install`_

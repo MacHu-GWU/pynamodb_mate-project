@@ -2,6 +2,7 @@
 pynamodb_mate_venv/
 pynamodb_mate.egg-info/
 pynamodb_mate-*/
+tmp/
 
 
 # Byte-compiled / optimized / DLL files
