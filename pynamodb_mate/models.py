@@ -366,3 +366,5 @@ class Model(PynamodbModel):
                 rate_limit=rate_limit,
             )
         )
+
+T_MODEL = T.TypeVar("T_MODEL", bound=Model)

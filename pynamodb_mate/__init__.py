@@ -64,6 +64,25 @@ except ImportError as e:  # pragma: no cover
 except:  # pragma: no cover
     raise
 
+try:
+    from .type_hint import (
+        REQUIRED_STR,
+        OPTIONAL_STR,
+        REQUIRED_INT,
+        OPTIONAL_INT,
+        REQUIRED_FLOAT,
+        OPTIONAL_FLOAT,
+        REQUIRED_BOOL,
+        OPTIONAL_BOOL,
+        REQUIRED_BINARY,
+        OPTIONAL_BINARY,
+        REQUIRED_DATETIME,
+        OPTIONAL_DATETIME,
+    )
+except ImportError as e:  # pragma: no cover
+    pass
+except:  # pragma: no cover
+    raise
 
 try:
     from .attributes.s3backed import (
@@ -78,7 +97,7 @@ try:
         CompressedBinaryAttribute,
         CompressedJSONDictAttribute,
     )
-    from .models import Model
+    from .models import Model, T_MODEL
 except ImportError as e:  # pragma: no cover
     pass
 except:  # pragma: no cover
