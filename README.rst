@@ -85,6 +85,7 @@ DynamoDB Patterns
 
 - 🎉 `Cache <https://github.com/MacHu-GWU/pynamodb_mate-project/blob/master/examples/patterns/cache.ipynb>`_: This feature gives you a "Redis" liked, serverless, Zero-ops, auto-scaling, high performance, pay-as-you-go cache layer based on DynamoDB.
 - 🎉 `Status Tracker <https://github.com/MacHu-GWU/pynamodb_mate-project/blob/master/examples/patterns/status-tracker.ipynb>`_: This feature gives you the ability to track status of each task, and error-handling, retry, concurrency control out-of-the-box.
+- 🎉 `Relationship <https://github.com/MacHu-GWU/pynamodb_mate-project/blob/master/examples/patterns/relationship.ipynb>`_: This feature allow you to manage mass amount entity and one-to-many, many-to-many relationship in DynamoDB using the ultimate data modeling strategy.
 
 
 .. _install:

@@ -20,11 +20,30 @@ Backlog
 **Miscellaneous**
 
 
+5.3.4.10 (2024-05-05)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Features and Improvements**
+
+- add :mod:`pynamodb_mate.patterns.relationship` Pattern, allow you to manage mass amount entity and one-to-many, many-to-many relationship in DynamoDB using the ultimate data modeling strategy.
+
+**Miscellaneous**
+
+- add Python3.12 support.
+
+**💥Breaking Change**
+
+- Drop Python3.7 support.
+
+
 5.3.4.9 (2023-05-15)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Bugfixes**
 
 - fix a but that some usages of :meth:`~pynamodb_mate.patterns.status_tracker.impl.BaseStatusTracker.make_value` are missing the parameter job_id.
+
+**Miscellaneous**
+
+- add Python3.11 support.
 
 
 5.3.4.8 (2023-02-03)
@@ -51,10 +70,6 @@ Backlog
 **Minor Improvements**
 
 - improve logging in :meth:`pynamodb_mate.patterns.status_tracker.impl.BaseStatusTracker.start`.
-
-**Bugfixes**
-
-**Miscellaneous**
 
 
 5.3.4.6 (2023-01-16)

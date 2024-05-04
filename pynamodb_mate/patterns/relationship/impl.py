@@ -133,6 +133,11 @@ def get_utc_now() -> datetime:
     return datetime.utcnow().replace(tzinfo=timezone.utc)
 
 
+def validate_entity_id(entity_id: str):
+    if "_" in entity_id:
+        raise ValueError(f"entity id {entity_id!r} cannot contain underscore")
+
+
 def validate_item_type_name(name: str):
     if "_" in name:
         raise ValueError(f"item type name {name!r} cannot contain underscore")
@@ -247,6 +252,7 @@ class RelationshipSetting:
             just create the in-memory entity.
         :param kwargs: additional parameters for the constructor.
         """
+        validate_entity_id(id)
         now = get_utc_now()
         klass = e_type.klass
         entity = klass(
