@@ -51,7 +51,7 @@
 
 Welcome to ``pynamodb_mate`` Documentation
 ==============================================================================
-📙 `Full Documentation is Here <https://pynamodb_mate.readthedocs.io/>`_
+📙 `Full Documentation is Here <https://pynamodb-mate.readthedocs.io/>`_
 
 .. contents::
     :class: this-will-duplicate-information-and-it-is-still-useful-here
