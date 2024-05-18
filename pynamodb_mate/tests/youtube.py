@@ -7,7 +7,7 @@ https://docs.google.com/spreadsheets/d/1PG2YyBoH2NoPyhcGhweARX2XdbRlh8-EEH9YD4Ii
 import typing as T
 
 import pynamodb_mate as pm
-import pynamodb_mate.patterns.relationship.api as rl
+from pynamodb_mate.patterns.relationship import api as rl
 from iterproxy import IterProxy
 
 

@@ -8,14 +8,14 @@ import typing as T
 import gzip
 import json
 
+import boto3
 from pynamodb.attributes import (
     UnicodeAttribute,
 )
 from ..helpers import sha256, join_s3_uri, split_s3_uri, is_s3_object_exists
 
-if T.TYPE_CHECKING:
-    import boto3
-    from botocore.client import BaseClient
+if T.TYPE_CHECKING: # pragma: no cover
+    from mypy_boto3_s3.client import S3Client
 
 
 class S3BackedAttribute(UnicodeAttribute):
@@ -42,7 +42,7 @@ class S3BackedAttribute(UnicodeAttribute):
         bucket_name: str,
         key_template: str = "pynamodb-mate/s3backed/{fingerprint}",
         compressed: bool = True,
-        s3_client: T.Optional["BaseClient"] = None,
+        s3_client: T.Optional["S3Client"] = None,
         hash_key: bool = False,
         range_key: bool = False,
         null: T.Optional[bool] = None,

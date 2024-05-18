@@ -6,3 +6,4 @@ build                                   # build distribution package
 
 # extra
 pycryptodome
+boto3_stubs[s3]

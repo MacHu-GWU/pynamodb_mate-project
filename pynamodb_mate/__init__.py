@@ -119,7 +119,7 @@ except:  # pragma: no cover
 
 
 try:
-    from . import patterns
+    from .patterns import api as patterns
 except ImportError as e:  # pragma: no cover
     pass
 except:  # pragma: no cover

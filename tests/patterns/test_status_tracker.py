@@ -6,8 +6,9 @@ import dataclasses
 import pytest
 
 from pynamodb.models import PAY_PER_REQUEST_BILLING_MODE
-from pynamodb_mate.tests import py_ver, BaseTest
-from pynamodb_mate.patterns.status_tracker import (
+from pynamodb_mate.patterns.status_tracker.impl import (
+    EPOCH,
+    utc_now,
     BaseStatusEnum,
     StatusAndUpdateTimeIndex,
     BaseStatusTracker,
@@ -16,11 +17,7 @@ from pynamodb_mate.patterns.status_tracker import (
     BaseData,
     BaseErrors,
 )
-from pynamodb_mate.patterns.status_tracker.impl import (
-    EPOCH,
-    utc_now,
-)
-
+from pynamodb_mate.tests import py_ver, BaseTest
 
 @dataclasses.dataclass
 class Data(BaseData):
