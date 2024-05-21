@@ -1,10 +1,25 @@
 # -*- coding: utf-8 -*-
 
 import typing as T
+import pytest
 
-from pynamodb.connection import Connection
-from pynamodb_mate.tests import BaseTest
-from pynamodb_mate.tests.youtube import r_setting as rs
+from pynamodb_mate.tests.constants import IS_CI
+from pynamodb_mate.tests.base_test import BaseTest
+from pynamodb_mate.tests.youtube import (
+    Entity,
+    User,
+    Video,
+    Channel,
+    Playlist,
+    VideoOwnership,
+    ChannelOwnership,
+    PlaylistOwnership,
+    VideoChannelAssociation,
+    VideoPlaylistAssociation,
+    ViewerSubscribeYoutuber,
+    ViewerSubscribeChannel,
+    r_setting as rs,
+)
 
 
 def assert_pk(lst, pks: T.List[str]):
@@ -22,13 +37,21 @@ def assert_sk(lst, sks: T.List[str]):
     assert set(x.sk_id for x in lst) == set(sks)
 
 
-class TestRelationship(BaseTest):
-    @classmethod
-    def setup_class(cls):
-        print("")
-        cls.mock_start()
-        cls.conn = Connection()
-        rs.main_model.create_table(wait=True)
+class Base(BaseTest):
+    model_list = [
+        Entity,
+        User,
+        Video,
+        Channel,
+        Playlist,
+        VideoOwnership,
+        ChannelOwnership,
+        PlaylistOwnership,
+        VideoChannelAssociation,
+        VideoPlaylistAssociation,
+        ViewerSubscribeYoutuber,
+        ViewerSubscribeChannel,
+    ]
 
     def setup_data(self):
         rs.delete_all()
@@ -145,24 +168,39 @@ class TestRelationship(BaseTest):
 
     def test_unset_one_to_many(self):
         self.setup_data()
+
+        # we only do transaction write but not transaction read
+        # we cannot read immediately after write,
+        # that's we need to final all write operations first
+        # then exam the result.
         rs.unsubscribe_all_youtuber(viewer_id="u-1")
+        rs.unsubscribe_all_channel(viewer_id="u-1")
+        rs.clear_playlist(playlist_id="p-3-1")
+        rs.clear_channel(channel_id="c-2-1")
+
         assert_pk(rs.find_subscribers_for_youtuber("u-2"), ["u-3"])
         assert_sk(rs.find_subscribed_youtubers("u-1"), [])
 
-        rs.unsubscribe_all_channel(viewer_id="u-1")
         assert_pk(rs.find_subscribers_for_channel("c-2-1"), ["u-3"])
         assert_pk(rs.find_subscribers_for_channel("c-2-2"), ["u-4"])
         assert_sk(rs.find_subscribed_channels("u-1"), [])
 
-        rs.clear_playlist(playlist_id="p-3-1")
         assert_pk(rs.find_videos_in_playlist("p-3-1"), [])
 
-        rs.clear_channel(channel_id="c-2-1")
-        assert_pk(rs.find_videos_in_playlist("c-2-1"), [])
+        assert_pk(rs.find_videos_in_channel("c-2-1"), [])
     # fmt: on
 
 
+class TestRelationshipUseMock(Base):
+    use_mock = True
+
+
+@pytest.mark.skipif(IS_CI, reason="Skip test that requires AWS resources in CI.")
+class TestRelationshipUseAws(Base):
+    use_mock = False
+
+
 if __name__ == "__main__":
-    from pynamodb_mate.tests import run_cov_test
+    from pynamodb_mate.tests.helper import run_cov_test
 
     run_cov_test(__file__, "pynamodb_mate.patterns.relationship", preview=False)

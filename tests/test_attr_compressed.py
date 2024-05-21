@@ -2,16 +2,15 @@
 
 import pytest
 
-from boto_session_manager import BotoSesManager
 import pynamodb_mate.api as pm
-from pynamodb_mate.tests.constants import py_ver, pynamodb_ver, aws_profile, is_ci
+from pynamodb_mate.tests.constants import PY_VER, PYNAMODB_VER, IS_CI
 from pynamodb_mate.tests.base_test import BaseTest
 
 
 # Define the Data Model to use compressed attribute
 class OrderModel(pm.Model):
     class Meta:
-        table_name = f"pynamodb-mate-test-orders-{py_ver}-{pynamodb_ver}"
+        table_name = f"pynamodb-mate-test-orders-{PY_VER}-{PYNAMODB_VER}"
         region = "us-east-1"
         billing_mode = pm.constants.PAY_PER_REQUEST_BILLING_MODE
 
@@ -27,17 +26,9 @@ class OrderModel(pm.Model):
 
 
 class Base(BaseTest):
-    @classmethod
-    def setup_class_post_hook(cls):
-        # clean up the table connection cache so that pynamodb can find the right boto3 session
-        OrderModel._connection = None
-
-        if cls.use_mock:
-            OrderModel.create_table(wait=False)
-        else:
-            with BotoSesManager(profile_name=aws_profile).awscli():
-                OrderModel.create_table(wait=True)
-                OrderModel.delete_all()
+    model_list = [
+        OrderModel,
+    ]
 
     def test_io_good_case(self):
         # Create an item
@@ -94,7 +85,7 @@ class TestCompressedAttributeUseMock(Base):
     use_mock = True
 
 
-@pytest.mark.skipif(is_ci, reason="Skip test that requires AWS resources in CI.")
+@pytest.mark.skipif(IS_CI, reason="Skip test that requires AWS resources in CI.")
 class TestCompressedAttributeUseAws(Base):
     use_mock = False
 

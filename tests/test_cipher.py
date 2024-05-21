@@ -29,6 +29,6 @@ class TestAESCTRCipher:
 
 
 if __name__ == "__main__":
-    from pynamodb_mate.tests import run_cov_test
+    from pynamodb_mate.tests.helper import run_cov_test
 
-    run_cov_test(__file__, "pynamodb_mate.cipher")
+    run_cov_test(__file__, "pynamodb_mate.cipher", preview=False)

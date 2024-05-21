@@ -6,13 +6,13 @@ from datetime import datetime, timezone
 
 from boto_session_manager import BotoSesManager
 import pynamodb_mate.api as pm
-from pynamodb_mate.tests.constants import py_ver, pynamodb_ver, aws_profile, is_ci
+from pynamodb_mate.tests.constants import PY_VER, PYNAMODB_VER, AWS_PROFILE, IS_CI
 from pynamodb_mate.tests.base_test import BaseTest
 
 
 class Model(pm.Model):
     class Meta:
-        table_name = f"pynamodb-mate-test-model-{py_ver}-{pynamodb_ver}"
+        table_name = f"pynamodb-mate-test-model-{PY_VER}-{PYNAMODB_VER}"
         region = "us-east-1"
         billing_mode = pm.constants.PAY_PER_REQUEST_BILLING_MODE
 
@@ -25,7 +25,7 @@ class Model(pm.Model):
 
 class Model1(pm.Model):
     class Meta:
-        table_name = f"pynamodb-mate-test-model1-{py_ver}-{pynamodb_ver}"
+        table_name = f"pynamodb-mate-test-model1-{PY_VER}-{PYNAMODB_VER}"
         region = "us-east-1"
         billing_mode = pm.constants.PAY_PER_REQUEST_BILLING_MODE
 
@@ -35,7 +35,7 @@ class Model1(pm.Model):
 
 class Model2(pm.Model):
     class Meta:
-        table_name = f"pynamodb-mate-test-model2-{py_ver}-{pynamodb_ver}"
+        table_name = f"pynamodb-mate-test-model2-{PY_VER}-{PYNAMODB_VER}"
         region = "us-east-1"
         billing_mode = pm.constants.PAY_PER_REQUEST_BILLING_MODE
 
@@ -55,7 +55,7 @@ class Base(BaseTest):
             Model1.create_table(wait=True)
             Model2.create_table(wait=True)
         else:
-            with BotoSesManager(profile_name=aws_profile).awscli():
+            with BotoSesManager(profile_name=AWS_PROFILE).awscli():
                 Model1.create_table(wait=True)
                 Model2.create_table(wait=True)
                 Model1.delete_all()
@@ -155,7 +155,7 @@ class TestModelUseMock(Base):
     use_mock = True
 
 
-@pytest.mark.skipif(is_ci, reason="Skip test that requires AWS resources in CI.")
+@pytest.mark.skipif(IS_CI, reason="Skip test that requires AWS resources in CI.")
 class TestModelUseAws(Base):
     use_mock = False
 

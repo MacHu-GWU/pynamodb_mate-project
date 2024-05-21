@@ -4,9 +4,9 @@ import os
 import sys
 import pynamodb
 
-py_ver = f"{sys.version_info.major}{sys.version_info.minor}"
-pynamodb_ver = pynamodb.__version__.replace(".", "_")
-aws_profile = "bmt_app_dev_us_east_1"
-bucket = "bmt-app-dev-us-east-1-data"
-prefix = "projects/pynamodb_mate/unit-test/"
-is_ci = "CI" in os.environ
+PY_VER = f"{sys.version_info.major}{sys.version_info.minor}"
+PYNAMODB_VER = pynamodb.__version__.replace(".", "_")
+AWS_PROFILE = "bmt_app_dev_us_east_1"
+BUCKET = "bmt-app-dev-us-east-1-data"
+PREFIX = "projects/pynamodb_mate/unit-test/"
+IS_CI = "CI" in os.environ

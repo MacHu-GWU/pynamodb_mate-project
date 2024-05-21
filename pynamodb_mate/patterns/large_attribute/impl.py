@@ -1,5 +1,22 @@
 # -*- coding: utf-8 -*-
 
+"""
+**Developer note [CN]**
+
+这个模块的目的是提供了一些方便的函数用与帮你保证 DynamoDB 和 S3 双写一致性问题.
+根据我在 https://learn-aws.readthedocs.io/search.html?q=Storage+Large+Item+in+DynamoDB&check_keywords=yes&area=default#
+博文中的详细探讨, Create / Update 时应该先写 S3, 再写 DynamoDB, Delete 时先删 DynamoDB 再删 S3.
+
+这个模块并没有将 S3 和 DynamoDB 的操作封装到一个函数中, 而是有意将两个操作分别用一个函数实现,
+然后让用户来决定如何将其组合起来. 这是因为 DynamoDB 中的 update 操作不止需要更新 Large Attribute,
+还可能需要更新其他 attribute, 这些操作我们无法预知, 应该交给用户来决定.
+
+这个模块还解决了一个问题对于 DynamoDB 而言, 更新多个 attributes 是一个 update 原子操作,
+但是对于 S3 而言, 每个 put_object 是一个独立操作. 如何保证原子性就是一个挑战. 并且当
+Large Attribute value 没有变化时, put_object 到 S3 是非必要的, 所以我们需要
+一个 PutS3Response 对象来追踪在这个 update 操作中, 哪些 attribute 所对应的
+S3 object 修改了, 然后在 DynamoDB 操作失败时, 进行一些 clean up 工作.
+"""
 import typing as T
 import hashlib
 import dataclasses
@@ -9,16 +26,12 @@ from pynamodb.constants import STRING
 
 from ...helpers import join_s3_uri, is_s3_object_exists
 
-if T.TYPE_CHECKING:
+if T.TYPE_CHECKING: # pragma: no cover
     from ...models import Model
 
 
 def get_md5(b: bytes) -> str:
     return hashlib.md5(b).hexdigest()
-
-
-def get_utc_now() -> datetime:
-    return datetime.utcnow().replace(tzinfo=timezone.utc)
 
 
 def get_s3_key(
@@ -29,14 +42,14 @@ def get_s3_key(
     prefix: str,
 ) -> str:
     parts = list()
-    if prefix:
+    if prefix: # pragma: no cover
         if prefix.startswith("/"):
             prefix = prefix[1:]
         elif prefix.endswith("/"):
             prefix = prefix[:-1]
         parts.append(prefix)
     parts.append(f"pk={pk}")
-    if sk is not None:
+    if sk is not None: # pragma: no cover
         parts.append(f"sk={sk}")
     parts.append(f"attr={attr}")
     md5 = get_md5(value)
@@ -51,6 +64,9 @@ def split_s3_uri(s3_uri: str) -> T.Tuple[str, str]:
 
 @dataclasses.dataclass
 class Action:
+    """
+
+    """
     attr: str
     s3_uri: str
     put_executed: bool
@@ -61,7 +77,7 @@ class PutS3Response:
     """
     The returned object for :meth:`LargeAttributeMixin.put_s3` method.
 
-    It tell you the list of attributes got updated and their s3 location, and
+    It tells you the list of attributes got updated and their s3 location, and
     whether the s3 put object API call happened. This is very helpful when the
     subsequent DynamoDB operation failed.
     """
@@ -129,7 +145,9 @@ class PutS3Response:
     ):
         """
         Call this method to clean up when the ``pynamodb_mate.Model(...).update(...)``
-        operation failed.
+        operation succeeded. Because when you changed the value of the large attribute,
+        you actually created a new S3 object. This method can help you clean up the
+        old S3 object.
 
         :param s3_client: ``boto3.client("s3")`` object.
         :param old_model: the old model object before updating it, we need this

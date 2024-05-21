@@ -807,7 +807,8 @@ class BaseStatusTracker(Model):
 
         # use index to query by status and aggregate the results
         for status in processed_status_list:
-            yield from cls._get_status_index().query(
+            index = cls._get_status_index()
+            yield from index.query(
                 hash_key=cls.make_value(status, JOB_ID),
                 scan_index_forward=older_task_first,
                 limit=limit,

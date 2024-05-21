@@ -6,9 +6,11 @@ https://docs.google.com/spreadsheets/d/1PG2YyBoH2NoPyhcGhweARX2XdbRlh8-EEH9YD4Ii
 
 import typing as T
 
-import pynamodb_mate as pm
+import pynamodb_mate.api as pm
 from pynamodb_mate.patterns.relationship import api as rl
 from iterproxy import IterProxy
+
+from .constants import PY_VER, PYNAMODB_VER
 
 
 class LookupIndex(rl.BaseLookupIndex):
@@ -23,9 +25,9 @@ class Entity(rl.BaseEntity):
     """
 
     class Meta:
-        table_name = "entity"
+        table_name = f"pynamodb-mate-test-youtube-entity-{PY_VER}-{PYNAMODB_VER}"
         region = "us-east-1"
-        billing_mode = pm.PAY_PER_REQUEST_BILLING_MODE
+        billing_mode = pm.constants.PAY_PER_REQUEST_BILLING_MODE
 
     lookup_index = LookupIndex()
 
@@ -558,7 +560,7 @@ class RelationshipSetting(rl.RelationshipSetting):
         channel_id: str,
     ):
         self.clear_many_by_many(
-            many_to_many_r_type=video_playlist_association_relationship_type,
+            many_to_many_r_type=video_channel_association_relationship_type,
             entity_id=channel_id,
             lookup_by_left=False,
         )

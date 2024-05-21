@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import pytest
+
 from boto_session_manager import BotoSesManager
 import pynamodb_mate.api as pm
-from pynamodb_mate.tests.constants import py_ver, pynamodb_ver, aws_profile, is_ci
+from pynamodb_mate.tests.constants import PY_VER, PYNAMODB_VER, AWS_PROFILE, IS_CI
 from pynamodb_mate.tests.base_test import BaseTest
 
 ENCRYPTION_KEY = "my-password"
@@ -11,7 +12,7 @@ ENCRYPTION_KEY = "my-password"
 
 class ArchiveModel(pm.Model):
     class Meta:
-        table_name = f"pynamodb-mate-test-archive-{py_ver}-{pynamodb_ver}"
+        table_name = f"pynamodb-mate-test-archive-{PY_VER}-{PYNAMODB_VER}"
         region = "us-east-1"
         billing_mode = pm.constants.PAY_PER_REQUEST_BILLING_MODE
 
@@ -45,17 +46,9 @@ def count_result(result):
 
 
 class Base(BaseTest):
-    @classmethod
-    def setup_class_post_hook(cls):
-        # clean up the table connection cache so that pynamodb can find the right boto3 session
-        ArchiveModel._connection = None
-
-        if cls.use_mock:
-            ArchiveModel.create_table(wait=False)
-        else:
-            with BotoSesManager(profile_name=aws_profile).awscli():
-                ArchiveModel.create_table(wait=True)
-                ArchiveModel.delete_all()
+    model_list = [
+        ArchiveModel,
+    ]
 
     def test(self):
         # Test encryption / decryption
@@ -99,12 +92,12 @@ class TestEncryptUseMock(Base):
     use_mock = True
 
 
-@pytest.mark.skipif(is_ci, reason="Skip test that requires AWS resources in CI.")
+@pytest.mark.skipif(IS_CI, reason="Skip test that requires AWS resources in CI.")
 class TestEncryptUseAws(Base):
     use_mock = False
 
 
 if __name__ == "__main__":
-    from pynamodb_mate.tests import run_cov_test
+    from pynamodb_mate.tests.helper import run_cov_test
 
     run_cov_test(__file__, "pynamodb_mate.attributes.encrypted", preview=False)

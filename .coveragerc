@@ -5,6 +5,8 @@ omit =
     pynamodb_mate/_version.py
     pynamodb_mate/docs/*
     pynamodb_mate/tests/*
+    pynamodb_mate/vendor/*
+    pynamodb_mate/paths
 
 [report]
 # Regexes for lines to exclude from consideration

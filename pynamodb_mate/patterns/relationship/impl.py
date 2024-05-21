@@ -26,6 +26,8 @@ Delete and Select items by relationship.
 """
 
 import typing as T
+import uuid
+import hashlib
 import dataclasses
 from datetime import datetime, timezone
 
@@ -35,7 +37,7 @@ from pynamodb.attributes import (
     BooleanAttribute,
     UTCDateTimeAttribute,
 )
-from pynamodb.indexes import GlobalSecondaryIndex, AllProjection
+from pynamodb.indexes import GlobalSecondaryIndex
 from pynamodb.transactions import TransactWrite
 from pynamodb.connection import Connection
 
@@ -47,7 +49,7 @@ from ...type_hint import (
     REQUIRED_BOOL,
     REQUIRED_DATETIME,
 )
-from ...models import Model, T_MODEL
+from ...models import Model
 
 
 ROOT = "--root--"
@@ -301,6 +303,7 @@ class RelationshipSetting:
         one_to_many_r_type: OneToManyRelationshipType,
         many_entity_id: str,
         one_entity_id: str,
+        client_request_token: T.Optional[str] = None,
     ):
         """
         For example, in YouTube use case, one user has many videos,
@@ -318,10 +321,13 @@ class RelationshipSetting:
         """
         type = one_to_many_r_type.name
         r_klass = one_to_many_r_type.klass
-
+        if client_request_token is None:
+            client_request_token = hashlib.md5(
+                f"set_{many_entity_id}_{one_entity_id}_{type}_{uuid.uuid4().hex}".encode("utf-8")
+            ).hexdigest()
         with TransactWrite(
             connection=conn,
-            client_request_token=f"set_{many_entity_id}_{one_entity_id}_{type}",
+            client_request_token=client_request_token,
         ) as trans:
             # find all existing relationship entities and delete them
             r_entities = list(
@@ -347,6 +353,7 @@ class RelationshipSetting:
         conn: Connection,
         one_to_many_r_type: OneToManyRelationshipType,
         many_entity_id: str,
+        client_request_token: T.Optional[str] = None,
     ):
         """
         Unset the one-to-many relationship.
@@ -357,10 +364,13 @@ class RelationshipSetting:
         """
         type = one_to_many_r_type.name
         r_klass = one_to_many_r_type.klass
-
+        if client_request_token is None:
+            client_request_token = hashlib.md5(
+                f"unset_{many_entity_id}_{type}_{uuid.uuid4().hex}".encode("utf-8")
+            ).hexdigest()
         with TransactWrite(
             connection=conn,
-            client_request_token=f"unset_{many_entity_id}_{type}",
+            client_request_token=client_request_token,
         ) as trans:
             # find all existing relationship entities and delete them
             r_entities = list(
@@ -492,6 +502,7 @@ class RelationshipSetting:
                 hash_key=f"{entity_id}_{type}",
             )
         else:
+
             result = r_klass.lookup_index.query(
                 hash_key=f"{entity_id}_{type}",
             )

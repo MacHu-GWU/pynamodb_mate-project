@@ -3,16 +3,13 @@
 import pytest
 from datetime import datetime, timezone
 
-import botocore.exceptions
-from boto_session_manager import BotoSesManager
 import pynamodb_mate.api as pm
 from pynamodb_mate.tests.constants import (
-    py_ver,
-    pynamodb_ver,
-    aws_profile,
-    is_ci,
-    bucket,
-    prefix,
+    PY_VER,
+    PYNAMODB_VER,
+    IS_CI,
+    BUCKET,
+    PREFIX,
 )
 from pynamodb_mate.tests.base_test import BaseTest
 from pynamodb_mate.patterns.large_attribute.api import split_s3_uri, LargeAttributeMixin
@@ -20,7 +17,7 @@ from pynamodb_mate.patterns.large_attribute.api import split_s3_uri, LargeAttrib
 
 class Document(pm.Model, LargeAttributeMixin):
     class Meta:
-        table_name = f"pynamodb-mate-test-large-attribute-{py_ver}-{pynamodb_ver}"
+        table_name = f"pynamodb-mate-test-large-attribute-{PY_VER}-{PYNAMODB_VER}"
         region = "us-east-1"
         billing_mode = pm.constants.PAY_PER_REQUEST_BILLING_MODE
 
@@ -30,7 +27,7 @@ class Document(pm.Model, LargeAttributeMixin):
     image = pm.UnicodeAttribute(null=True)
 
 
-prefix = f"{prefix}large_attribute/"
+prefix = f"{PREFIX}large_attribute/"
 
 
 def get_utc_now() -> datetime:
@@ -38,29 +35,9 @@ def get_utc_now() -> datetime:
 
 
 class Base(BaseTest):
-    @classmethod
-    def setup_class_post_hook(cls):
-        # clean up the table connection cache so that pynamodb can find the right boto3 session
-        Document._connection = None
-
-        if cls.use_mock:
-            Document.create_table(wait=False)
-            s3_client = cls.bsm.s3_client
-        else:
-            bsm = BotoSesManager(profile_name=aws_profile)
-            s3_client = bsm.s3_client
-            cls.bsm = bsm
-            with bsm.awscli():
-                Document.create_table(wait=True)
-                Document.delete_all()
-        cls.s3_client = s3_client
-        try:
-            s3_client.head_bucket(Bucket=bucket)
-        except botocore.exceptions.ClientError as e:
-            if e.response["Error"]["Code"] == "404":
-                s3_client.create_bucket(Bucket=bucket)
-            else:
-                raise e
+    model_list = [
+        Document,
+    ]
 
     def test(self):
         # ----------------------------------------------------------------------
@@ -75,8 +52,8 @@ class Base(BaseTest):
             pk=pk,
             sk=None,
             kvs=dict(html=html_data, image=image_data),
-            bucket=bucket,
-            prefix=prefix,
+            bucket=BUCKET,
+            prefix=PREFIX,
             update_at=utc_now,
         )
         try:
@@ -101,8 +78,8 @@ class Base(BaseTest):
             pk=pk,
             sk=None,
             kvs=dict(html=html_data, image=image_data),
-            bucket=bucket,
-            prefix=prefix,
+            bucket=BUCKET,
+            prefix=PREFIX,
             update_at=utc_now,
         )
         try:
@@ -135,12 +112,12 @@ class TestLargeAttributeUseMock(Base):
     use_mock = True
 
 
-# @pytest.mark.skipif(is_ci, reason="Skip test that requires AWS resources in CI.")
-# class TestLargeAttributeUseAws(Base):
-#     use_mock = False
+@pytest.mark.skipif(IS_CI, reason="Skip test that requires AWS resources in CI.")
+class TestLargeAttributeUseAws(Base):
+    use_mock = False
 
 
 if __name__ == "__main__":
-    from pynamodb_mate.tests import run_cov_test
+    from pynamodb_mate.tests.helper import run_cov_test
 
     run_cov_test(__file__, "pynamodb_mate.patterns.large_attribute", preview=False)
