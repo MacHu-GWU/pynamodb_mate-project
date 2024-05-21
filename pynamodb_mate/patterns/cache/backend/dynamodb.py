@@ -7,7 +7,7 @@ DynamoDB backend for cache.
 import typing as T
 import json
 
-from pynamodb.models import PAY_PER_REQUEST_BILLING_MODE
+from pynamodb.constants import PAY_PER_REQUEST_BILLING_MODE
 from pynamodb.attributes import (
     UnicodeAttribute,
     BinaryAttribute,

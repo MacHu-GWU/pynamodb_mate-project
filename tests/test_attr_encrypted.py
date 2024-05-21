@@ -1,40 +1,38 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-import pynamodb_mate as pm
-from pynamodb_mate.tests import py_ver, BaseTest
+from boto_session_manager import BotoSesManager
+import pynamodb_mate.api as pm
+from pynamodb_mate.tests.constants import py_ver, pynamodb_ver, aws_profile, is_ci
+from pynamodb_mate.tests.base_test import BaseTest
 
 ENCRYPTION_KEY = "my-password"
 
 
 class ArchiveModel(pm.Model):
     class Meta:
-        table_name = f"pynamodb-mate-test-archive-{py_ver}"
+        table_name = f"pynamodb-mate-test-archive-{py_ver}-{pynamodb_ver}"
         region = "us-east-1"
-        billing_mode = pm.PAY_PER_REQUEST_BILLING_MODE
+        billing_mode = pm.constants.PAY_PER_REQUEST_BILLING_MODE
 
     aid = pm.UnicodeAttribute(hash_key=True)
-    secret_message = pm.EncryptedUnicodeAttribute(
+    secret_message: pm.REQUIRED_BINARY = pm.attributes.EncryptedUnicodeAttribute(
         encryption_key=ENCRYPTION_KEY,
         determinative=True,
     )
-
-    secret_binary = pm.EncryptedBinaryAttribute(
+    secret_binary: pm.REQUIRED_BINARY = pm.attributes.EncryptedBinaryAttribute(
         encryption_key=ENCRYPTION_KEY,
         determinative=False,
     )
-
-    secret_integer = pm.EncryptedNumberAttribute(
+    secret_integer: pm.REQUIRED_BINARY = pm.attributes.EncryptedNumberAttribute(
         encryption_key=ENCRYPTION_KEY,
         determinative=True,
     )
-
-    secret_float = pm.EncryptedNumberAttribute(
+    secret_float: pm.REQUIRED_BINARY = pm.attributes.EncryptedNumberAttribute(
         encryption_key=ENCRYPTION_KEY,
         determinative=False,
     )
-
-    secret_data = pm.EncryptedJsonDictAttribute(
+    secret_data: pm.REQUIRED_BINARY = pm.attributes.EncryptedJsonDictAttribute(
         encryption_key=ENCRYPTION_KEY,
         determinative=False,
     )
@@ -46,11 +44,18 @@ def count_result(result):
     return result.total_count
 
 
-class TestEncryptUnicode(BaseTest):
+class Base(BaseTest):
     @classmethod
-    def setup_class(cls):
-        cls.mock_start()
-        ArchiveModel.create_table(wait=True)
+    def setup_class_post_hook(cls):
+        # clean up the table connection cache so that pynamodb can find the right boto3 session
+        ArchiveModel._connection = None
+
+        if cls.use_mock:
+            ArchiveModel.create_table(wait=False)
+        else:
+            with BotoSesManager(profile_name=aws_profile).awscli():
+                ArchiveModel.create_table(wait=True)
+                ArchiveModel.delete_all()
 
     def test(self):
         # Test encryption / decryption
@@ -88,6 +93,15 @@ class TestEncryptUnicode(BaseTest):
         assert (
             count_result(ArchiveModel.scan(ArchiveModel.secret_binary == binary)) == 0
         )
+
+
+class TestEncryptUseMock(Base):
+    use_mock = True
+
+
+@pytest.mark.skipif(is_ci, reason="Skip test that requires AWS resources in CI.")
+class TestEncryptUseAws(Base):
+    use_mock = False
 
 
 if __name__ == "__main__":

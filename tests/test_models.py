@@ -1,16 +1,20 @@
 # -*- coding: utf-8 -*-
 
+import typing as T
+import pytest
 from datetime import datetime, timezone
 
-import pynamodb_mate as pm
-from pynamodb_mate.tests import py_ver, BaseTest
+from boto_session_manager import BotoSesManager
+import pynamodb_mate.api as pm
+from pynamodb_mate.tests.constants import py_ver, pynamodb_ver, aws_profile, is_ci
+from pynamodb_mate.tests.base_test import BaseTest
 
 
 class Model(pm.Model):
     class Meta:
-        table_name = f"pynamodb-mate-test-model-{py_ver}"
+        table_name = f"pynamodb-mate-test-model-{py_ver}-{pynamodb_ver}"
         region = "us-east-1"
-        billing_mode = pm.PAY_PER_REQUEST_BILLING_MODE
+        billing_mode = pm.constants.PAY_PER_REQUEST_BILLING_MODE
 
     hash_key = pm.UnicodeAttribute(hash_key=True)
     data = pm.JSONAttribute(default=lambda: dict())
@@ -21,9 +25,9 @@ class Model(pm.Model):
 
 class Model1(pm.Model):
     class Meta:
-        table_name = f"pynamodb-mate-test-model1-{py_ver}"
+        table_name = f"pynamodb-mate-test-model1-{py_ver}-{pynamodb_ver}"
         region = "us-east-1"
-        billing_mode = pm.PAY_PER_REQUEST_BILLING_MODE
+        billing_mode = pm.constants.PAY_PER_REQUEST_BILLING_MODE
 
     hash_key = pm.UnicodeAttribute(hash_key=True)
     data = pm.JSONAttribute(default=lambda: dict())
@@ -31,24 +35,31 @@ class Model1(pm.Model):
 
 class Model2(pm.Model):
     class Meta:
-        table_name = f"pynamodb-mate-test-model2-{py_ver}"
+        table_name = f"pynamodb-mate-test-model2-{py_ver}-{pynamodb_ver}"
         region = "us-east-1"
-        billing_mode = pm.PAY_PER_REQUEST_BILLING_MODE
+        billing_mode = pm.constants.PAY_PER_REQUEST_BILLING_MODE
 
     hash_key = pm.UnicodeAttribute(hash_key=True)
     range_key = pm.UTCDateTimeAttribute(range_key=True)
     data = pm.JSONAttribute(default=lambda: dict())
 
 
-class TestModel(BaseTest):
+class Base(BaseTest):
     @classmethod
-    def setup_class(cls):
-        cls.mock_start()
+    def setup_class_post_hook(cls):
+        # clean up the table connection cache so that pynamodb can find the right boto3 session
+        Model1._connection = None
+        Model2._connection = None
 
-        Model1.create_table(wait=True)
-        Model2.create_table(wait=True)
-        Model1.delete_all()
-        Model2.delete_all()
+        if cls.use_mock:
+            Model1.create_table(wait=True)
+            Model2.create_table(wait=True)
+        else:
+            with BotoSesManager(profile_name=aws_profile).awscli():
+                Model1.create_table(wait=True)
+                Model2.create_table(wait=True)
+                Model1.delete_all()
+                Model2.delete_all()
 
     def test_post_init(self):
         model = Model(hash_key="a")
@@ -138,6 +149,15 @@ class TestModel(BaseTest):
         model2.save()
         _ = model2.item_detail_console_url
         # print(model2.item_detail_console_url)
+
+
+class TestModelUseMock(Base):
+    use_mock = True
+
+
+@pytest.mark.skipif(is_ci, reason="Skip test that requires AWS resources in CI.")
+class TestModelUseAws(Base):
+    use_mock = False
 
 
 if __name__ == "__main__":

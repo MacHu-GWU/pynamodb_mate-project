@@ -54,6 +54,9 @@ def is_s3_object_exists(s3_client, bucket: str, key: str) -> bool:  # pragma: no
 
 
 def remove_s3_prefix(s3_client, bucket, prefix):
+    """
+    Remove all objects with the same prefix in the bucket.
+    """
     res = s3_client.list_objects_v2(Bucket=bucket, Prefix=prefix, MaxKeys=1000)
     for content in res.get("Contents", []):
         key = content["Key"]

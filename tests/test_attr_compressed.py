@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import pytest
+
 from boto_session_manager import BotoSesManager
 import pynamodb_mate.api as pm
 from pynamodb_mate.tests.constants import py_ver, pynamodb_ver, aws_profile, is_ci
@@ -36,6 +37,7 @@ class Base(BaseTest):
         else:
             with BotoSesManager(profile_name=aws_profile).awscli():
                 OrderModel.create_table(wait=True)
+                OrderModel.delete_all()
 
     def test_io_good_case(self):
         # Create an item

@@ -25,8 +25,8 @@ class CacheRecord:
     """
 
     value: bytes
-    expire: int
-    update_ts: int
+    expire: T.Union[int, float]
+    update_ts: T.Union[int, float]
 
     __slots__ = ("value", "expire", "update_ts")
 
@@ -97,7 +97,7 @@ class AbstractCache(
         record = CacheRecord(
             value=self.serialize(value),
             expire=expire,
-            update_ts=int(utc_now().timestamp()),
+            update_ts=utc_now().timestamp(),
         )
         self._set_record_to_backend(key, record)
 
@@ -113,6 +113,7 @@ class AbstractCache(
         :return: the cached object.
         """
         record = self._get_record_from_backend(key)
+
         if record is None:
             return None
 
