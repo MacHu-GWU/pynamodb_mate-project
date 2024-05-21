@@ -67,6 +67,9 @@ class Base(BaseTest):
         if cls.use_mock:
             cls.s3_client = cls.bsm.s3_client
             cls.create_bucket(cls.s3_client, BUCKET)
+            UrlModel.html.s3_client = cls.s3_client
+            UrlModel.content.s3_client = cls.s3_client
+            UrlModel.data.s3_client = cls.s3_client
             cls.conn = Connection()
             for model_class in cls.model_list:
                 model_class.create_table(wait=False)
