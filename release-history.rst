@@ -21,11 +21,20 @@ Backlog
 **Miscellaneous**
 
 
-5.3.4.10 (2024-05-05)
+5.5.1.1 (2024-05-21)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Background**
+
+- The ``pynamodb`` implementation relies on some ``botocore`` private API. And one of the private API is changed from ``botocore`` 1.33.2 that breaks the ``pynamodb`` implementation. ``pynamodb`` 5.5.1 fixed the compatibility issue, so that ``pynamodb_mate`` also got upgraded to ``5.5.1.X``.
+
 **Features and Improvements**
 
 - add :mod:`pynamodb_mate.patterns.relationship` Pattern, allow you to manage mass amount entity and one-to-many, many-to-many relationship in DynamoDB using the ultimate data modeling strategy.
+- rework the import structure of the library, now we recommend using ``import pynamodb_mate.api as pm`` instead of ``import pynamodb_mate as pm``. Old public API is still available in ``import pynamodb_mate as pm`` name space. And these API is scheduled to be deleted in 6.X version.
+
+**Minor Improvements**
+
+- Rework the unit test, now it uses both mock and real AWS DynamoDB table for testing.
 
 **Miscellaneous**
 
