@@ -7,6 +7,7 @@ Store big binary or text in S3 and store the s3 object path in DynamoDB.
 import typing as T
 import gzip
 import json
+import warnings
 
 import boto3
 from pynamodb.attributes import (
@@ -14,7 +15,7 @@ from pynamodb.attributes import (
 )
 from ..helpers import sha256, join_s3_uri, split_s3_uri, is_s3_object_exists
 
-if T.TYPE_CHECKING: # pragma: no cover
+if T.TYPE_CHECKING:  # pragma: no cover
     from mypy_boto3_s3.client import S3Client
 
 
@@ -35,6 +36,8 @@ class S3BackedAttribute(UnicodeAttribute):
         if you want to use multiple s3 bucket that with different AWS credential.
 
     Other parameters are the same as ``pynamodb.attributes.UnicodeAttribute``.
+
+    .. deprecated:: 5.5.1.1
     """
 
     def __init__(
@@ -50,6 +53,17 @@ class S3BackedAttribute(UnicodeAttribute):
         default_for_new: T.Optional[T.Callable] = None,
         attr_name: T.Optional[str] = None,
     ):
+        warnings.warn(
+            (
+                "pynamodb_mate.attributes.s3backed.S3BackedAttribute, "
+                "pynamodb_mate.attributes.s3backed.S3BackedBigBinaryAttribute, "
+                "pynamodb_mate.attributes.s3backed.S3BackedBigTextAttribute, "
+                "pynamodb_mate.attributes.s3backed.S3BackedJsonDictAttribute "
+                "are deprecated, they will be removed in 6.X. You should use "
+                "pynamodb_mate.patterns.large_attribute.api instead."
+            ),
+            DeprecationWarning,
+        )
         super().__init__(
             hash_key=hash_key,
             range_key=range_key,

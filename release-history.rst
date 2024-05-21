@@ -30,6 +30,7 @@ Backlog
 **Features and Improvements**
 
 - add :mod:`pynamodb_mate.patterns.relationship` Pattern, allow you to manage mass amount entity and one-to-many, many-to-many relationship in DynamoDB using the ultimate data modeling strategy.
+- add :mod:`pynamodb_mate.patterns.large_attribute` Pattern, it re-implements the ``pynamodb_mate.attributes.s3backed`` to provide better consistency model across DynamoDB and S3, and it also support updating multiple large attributes in one API. The old ``pynamodb_mate.attibutes.s3backed`` module is marked as deprecated, and it will be removed in 6.X version.
 - rework the import structure of the library, now we recommend using ``import pynamodb_mate.api as pm`` instead of ``import pynamodb_mate as pm``. Old public API is still available in ``import pynamodb_mate as pm`` name space. And these API is scheduled to be deleted in 6.X version.
 
 **Minor Improvements**

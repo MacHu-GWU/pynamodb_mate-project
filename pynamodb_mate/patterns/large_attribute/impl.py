@@ -17,16 +17,18 @@ Large Attribute value 没有变化时, put_object 到 S3 是非必要的, 所以
 一个 PutS3Response 对象来追踪在这个 update 操作中, 哪些 attribute 所对应的
 S3 object 修改了, 然后在 DynamoDB 操作失败时, 进行一些 clean up 工作.
 """
+
 import typing as T
 import hashlib
 import dataclasses
-from datetime import datetime, timezone
+from datetime import datetime
 
 from pynamodb.constants import STRING
 
 from ...helpers import join_s3_uri, is_s3_object_exists
 
-if T.TYPE_CHECKING: # pragma: no cover
+if T.TYPE_CHECKING:  # pragma: no cover
+    from mypy_boto3_s3.client import S3Client
     from ...models import Model
 
 
@@ -42,14 +44,14 @@ def get_s3_key(
     prefix: str,
 ) -> str:
     parts = list()
-    if prefix: # pragma: no cover
+    if prefix:  # pragma: no cover
         if prefix.startswith("/"):
             prefix = prefix[1:]
         elif prefix.endswith("/"):
             prefix = prefix[:-1]
         parts.append(prefix)
     parts.append(f"pk={pk}")
-    if sk is not None: # pragma: no cover
+    if sk is not None:  # pragma: no cover
         parts.append(f"sk={sk}")
     parts.append(f"attr={attr}")
     md5 = get_md5(value)
@@ -64,9 +66,8 @@ def split_s3_uri(s3_uri: str) -> T.Tuple[str, str]:
 
 @dataclasses.dataclass
 class Action:
-    """
+    """ """
 
-    """
     attr: str
     s3_uri: str
     put_executed: bool
@@ -92,7 +93,7 @@ class PutS3Response:
 
     def batch_delete(
         self,
-        s3_client,
+        s3_client: "S3Client",
         s3_uri_list: T.List[str],
     ):
         """
@@ -124,7 +125,7 @@ class PutS3Response:
 
     def clean_up_when_create_dynamodb_item_failed(
         self,
-        s3_client,
+        s3_client: "S3Client",
     ):
         """
         Call this method to clean up when the ``pynamodb_mate.Model(...).save()``
@@ -140,7 +141,7 @@ class PutS3Response:
 
     def clean_up_when_update_dynamodb_item_succeeded(
         self,
-        s3_client,
+        s3_client: "S3Client",
         old_model: T.Union["Model", "LargeAttributeMixin"],
     ):
         """
@@ -165,7 +166,7 @@ class PutS3Response:
 
     def clean_up_when_update_dynamodb_item_failed(
         self,
-        s3_client,
+        s3_client: "S3Client",
         old_model: T.Union["Model", "LargeAttributeMixin"],
     ):
         """
@@ -195,7 +196,7 @@ class LargeAttributeMixin:
     @classmethod
     def put_s3(
         cls: T.Type["Model"],
-        s3_client,
+        s3_client: T.Union["S3Client", T.Dict[str, "S3Client"]],
         pk: T.Union[str, int],
         sk: T.Optional[T.Union[str, int]],
         kvs: T.Dict[str, bytes],
@@ -206,7 +207,9 @@ class LargeAttributeMixin:
         """
         Put large attribute data to S3.
 
-        :param s3_client:
+        :param s3_client: single ``boto3.client("s3")`` object if all large attributes are
+            in the same AWS Account. If you have multiple large attributes in
+            different AWS Account, then you should pass a dict of s3 client.
         :param pk: partition key.
         :param sk: sort key, use None if no sort key.
         :param kvs: key value pairs of the large attribute data. The key is the
@@ -224,6 +227,11 @@ class LargeAttributeMixin:
         :rtype: :class:`PutS3Response`.
         """
         attrs = cls.get_attributes()
+        s3_client_is_dict = isinstance(s3_client, dict)
+        if s3_client_is_dict is False:
+            s3_client_mapper = dict()
+        else:
+            s3_client_mapper = s3_client
         for k in kvs:
             if k not in attrs:
                 raise AttributeError(f"Key {k} not found in attributes")
@@ -232,6 +240,8 @@ class LargeAttributeMixin:
                     f"The large attribute type has to be UnicodeAttribute, "
                     f"but yours: {k}: {attrs[k].attr_type}!"
                 )
+            if s3_client_is_dict is False:
+                s3_client_mapper[k] = s3_client
         put_s3_response = PutS3Response(actions=[])
         for attr, value in kvs.items():
             metadata = {"pk": pk}
@@ -241,12 +251,13 @@ class LargeAttributeMixin:
             metadata["update_at"] = update_at.isoformat()
             s3_key = get_s3_key(pk=pk, sk=sk, attr=attr, value=value, prefix=prefix)
             s3_uri = join_s3_uri(bucket, s3_key)
-            if is_s3_object_exists(s3_client, bucket=bucket, key=s3_key):
+            _s3_client = s3_client_mapper[attr]
+            if is_s3_object_exists(_s3_client, bucket=bucket, key=s3_key):
                 put_s3_response.actions.append(
                     Action(attr=attr, s3_uri=s3_uri, put_executed=False)
                 )
             else:
-                s3_client.put_object(
+                _s3_client.put_object(
                     Bucket=bucket,
                     Key=s3_key,
                     Body=value,
