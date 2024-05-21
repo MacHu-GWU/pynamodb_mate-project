@@ -1,36 +1,41 @@
 # -*- coding: utf-8 -*-
 
-# Import pynamodb_mate library
-import pynamodb_mate
-from pynamodb_mate.tests import py_ver, BaseTest
+import pytest
+from boto_session_manager import BotoSesManager
+import pynamodb_mate.api as pm
+from pynamodb_mate.tests.constants import py_ver, pynamodb_ver, aws_profile, is_ci
+from pynamodb_mate.tests.base_test import BaseTest
 
 
 # Define the Data Model to use compressed attribute
-class OrderModel(pynamodb_mate.Model):
+class OrderModel(pm.Model):
     class Meta:
-        table_name = f"pynamodb-mate-test-orders-{py_ver}"
+        table_name = f"pynamodb-mate-test-orders-{py_ver}-{pynamodb_ver}"
         region = "us-east-1"
-        billing_mode = pynamodb_mate.PAY_PER_REQUEST_BILLING_MODE
+        billing_mode = pm.constants.PAY_PER_REQUEST_BILLING_MODE
 
-    order_id = pynamodb_mate.UnicodeAttribute(hash_key=True)
-
+    # fmt: off
+    order_id: pm.REQUIRED_STR = pm.UnicodeAttribute(hash_key=True)
     # original value is unicode str
-    description = pynamodb_mate.CompressedUnicodeAttribute(null=True)
-
+    description: pm.OPTIONAL_BINARY = pm.attributes.CompressedUnicodeAttribute(null=True)
     # original value is binary bytes
-    image = pynamodb_mate.CompressedBinaryAttribute(null=True)
-
+    image: pm.OPTIONAL_BINARY = pm.attributes.CompressedBinaryAttribute(null=True)
     # original value is any json serializable object
-    items = pynamodb_mate.CompressedJSONDictAttribute(null=True)
+    items: pm.OPTIONAL_BINARY = pm.attributes.CompressedJSONDictAttribute(null=True)
+    # fmt: on
 
 
-class TestCompressedAttribute(BaseTest):
+class Base(BaseTest):
     @classmethod
-    def setup_class(cls):
-        cls.mock_start()
+    def setup_class_post_hook(cls):
+        # clean up the table connection cache so that pynamodb can find the right boto3 session
+        OrderModel._connection = None
 
-        # Create table if not exists
-        OrderModel.create_table(wait=True)
+        if cls.use_mock:
+            OrderModel.create_table(wait=False)
+        else:
+            with BotoSesManager(profile_name=aws_profile).awscli():
+                OrderModel.create_table(wait=True)
 
     def test_io_good_case(self):
         # Create an item
@@ -83,7 +88,16 @@ class TestCompressedAttribute(BaseTest):
         assert order.items is None
 
 
+class TestCompressedAttributeUseMock(Base):
+    use_mock = True
+
+
+@pytest.mark.skipif(is_ci, reason="Skip test that requires AWS resources in CI.")
+class TestCompressedAttributeUseAws(Base):
+    use_mock = False
+
+
 if __name__ == "__main__":
-    from pynamodb_mate.tests import run_cov_test
+    from pynamodb_mate.tests.helper import run_cov_test
 
     run_cov_test(__file__, "pynamodb_mate.attributes.compressed")
