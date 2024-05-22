@@ -45,6 +45,16 @@ def get_s3_key(
     value: bytes,
     prefix: str,
 ) -> str:
+    """
+    :param pk: partition key.
+    :param sk: sort key, use None if no sort key.
+    :param attr: large attribute name.
+    :param value: large attribute value in binary format.
+    :param prefix: common S3 prefix.
+
+    :return: example "${prefix}/pk={pk}/sk={sk}/attr={attr}/md5={md5}"
+
+    """
     parts = list()
     if prefix:  # pragma: no cover
         if prefix.startswith("/"):
@@ -286,6 +296,22 @@ class LargeAttributeMixin:
     ):
         """
         Wrap the DynamoDB put_item and S3 put_object operation in a transaction.
+
+        :param s3_client: ``boto3.client("s3")`` object.
+        :param pk: hash key value of the DynamoDB item.
+        :param sk: range key value if your DynamoDB table has range key, otherwise
+            use None.
+        :param kvs: key value mapper in Python dictionary for large attribute name
+            and binary data. All data has to be encoded in binary format.
+        :param bucket: S3 bucket to store the large attribute data.
+        :param prefix: S3 prefix to store the large attribute data, the final S3 key
+            would be ``s3://{bucket}/{prefix}/pk={pk}/sk={sk}/attr={attr}/md5={md5}``.
+        :param update_at: the update time of the DynamoDB item, it will be stored
+            in the S3 object metadata as well.
+        :param attributes: additional DynamoDB item attributes other than
+            large attributes you want to set.
+        :param clean_up_when_failed: if True, if S3 write succeeded
+            and DynamoDB create item failed, the created S3 object will be deleted.
         """
         put_s3_res = cls.put_s3(
             s3_client=s3_client,
@@ -329,6 +355,25 @@ class LargeAttributeMixin:
     ):
         """
         Wrap the DynamoDB update_item and S3 put_object operation in a transaction.
+
+        :param s3_client: ``boto3.client("s3")`` object.
+        :param pk: hash key value of the DynamoDB item.
+        :param sk: range key value if your DynamoDB table has range key, otherwise
+            use None.
+        :param kvs: key value mapper in Python dictionary for large attribute name
+            and binary data. All data has to be encoded in binary format.
+        :param bucket: S3 bucket to store the large attribute data.
+        :param prefix: S3 prefix to store the large attribute data, the final S3 key
+            would be ``s3://{bucket}/{prefix}/pk={pk}/sk={sk}/attr={attr}/md5={md5}``.
+        :param update_at: the update time of the DynamoDB item, it will be stored
+            in the S3 object metadata as well.
+        :param update_actions: additional DynamoDB item update expressions syntax
+            other than large attributes you want to set. Please refer to
+            https://pynamodb.readthedocs.io/en/latest/updates.html
+        :param clean_up_when_succeeded: if True, if large attributes of old DynamoDB
+            item got changed, the old S3 object will be deleted.
+        :param clean_up_when_failed: if Ture, if S3 write succeeded
+            and DynamoDB update item failed, the created S3 object will be deleted.
         """
         put_s3_res = cls.put_s3(
             s3_client=s3_client,
@@ -399,6 +444,17 @@ class LargeAttributeMixin:
     ):
         """
         Wrap the DynamoDB delete_item and S3 delete_object operation in a transaction.
+
+        :param s3_client: ``boto3.client("s3")`` object.
+        :param pk: hash key value of the DynamoDB item.
+        :param sk: range key value if your DynamoDB table has range key, otherwise
+            use None.
+        :param attributes: list of large attribute names to delete. This is required
+            when clean_up_when_succeeded is True. If clean_up_when_succeeded is False,
+            this parameter has no effect.
+        :param clean_up_when_succeeded: if True, the corresponding S3 object will
+            deleted after DynamoDB item been deleted.
+
         """
         # note: the pynamodb.Model.delete() method doesn't have ``return_values``
         # parameter, we can't get the old model after delete it. So we have to
