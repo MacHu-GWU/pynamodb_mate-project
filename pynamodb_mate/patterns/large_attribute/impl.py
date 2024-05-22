@@ -22,7 +22,7 @@ import typing as T
 import copy
 import hashlib
 import dataclasses
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from pynamodb.constants import STRING
 from pynamodb.expressions.update import Action
@@ -436,10 +436,18 @@ class LargeAttributeMixin:
         attributes: T.List[str],
         bucket: str,
         prefix: str,
+        expire: int,
     ) -> T.List[str]:  # pragma: no cover
         """
         Clean up dangling S3 objects. A dangling S3 object is an object that is not
         referenced by any DynamoDB item.
+
+        :param s3_client: ``boto3.client("s3")`` object.
+        :param attributes: the list of large attribute names.
+        :param bucket: S3 bucket name.
+        :param prefix: S3 prefix to scan.
+        :param expire: we don't delete S3 object that is modified with in
+            the last `expire` seconds, even it is dangling.
         """
         # get all existing large attribute S3 URIs
         if len(attributes) == 0:
@@ -461,6 +469,8 @@ class LargeAttributeMixin:
 
         # if an S3 object is not in the existing_large_attribute_s3_uri_set,
         # then it is a dangling S3 object.
+        now = datetime.utcnow()
+        threshold = now - timedelta(seconds=expire)
         paginator = s3_client.get_paginator("list_objects_v2")
         response_iterator = paginator.paginate(
             Bucket=bucket,
@@ -473,8 +483,11 @@ class LargeAttributeMixin:
         for response in response_iterator:
             for dct in response.get("Contents", []):
                 s3_key = dct["Key"]
+                last_modified = dct["LastModified"]
                 s3_uri = join_s3_uri(bucket, s3_key)
-                if s3_uri not in existing_large_attribute_s3_uri_set:
+                if (s3_uri not in existing_large_attribute_s3_uri_set) and (
+                    last_modified < threshold
+                ):
                     to_delete_s3_uri_list.append(s3_uri)
         batch_delete_s3_objects(s3_client, to_delete_s3_uri_list)
         return to_delete_s3_uri_list
