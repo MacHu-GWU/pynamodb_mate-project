@@ -80,19 +80,27 @@ class Base(BaseTest):
         data1["data"]["a"] = 1
         assert data2["data"] == {"a": 1}
 
+    def test_make_one(self):
+        model1 = Model1.make_one("pk")
+        assert model1.hash_key == "pk"
+
+        model2 = Model2.make_one("pk", "sk")
+        assert model2.hash_key == "pk"
+        assert model2.range_key == "sk"
+
     def test_get_one_or_none(self):
-        model = Model1().get_one_or_none("one-or-none")
+        model = Model1.get_one_or_none("one-or-none")
         assert model is None
         Model1("one-or-none").save()
-        model = Model1().get_one_or_none("one-or-none")
+        model = Model1.get_one_or_none("one-or-none")
         assert model.to_dict() == {"hash_key": "one-or-none", "data": {}}
 
-        model = Model2().get_one_or_none(
+        model = Model2.get_one_or_none(
             "one-or-none", datetime(2000, 1, 1, tzinfo=timezone.utc)
         )
         assert model is None
         Model2("one-or-none", datetime(2000, 1, 1, tzinfo=timezone.utc)).save()
-        model = Model2().get_one_or_none(
+        model = Model2.get_one_or_none(
             "one-or-none", datetime(2000, 1, 1, tzinfo=timezone.utc)
         )
         assert model.to_dict() == {
@@ -161,6 +169,6 @@ class TestModelUseAws(Base):
 
 
 if __name__ == "__main__":
-    from pynamodb_mate.tests import run_cov_test
+    from pynamodb_mate.tests.helper import run_cov_test
 
     run_cov_test(__file__, "pynamodb_mate.models", preview=False)

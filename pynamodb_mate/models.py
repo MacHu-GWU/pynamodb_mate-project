@@ -114,6 +114,18 @@ class Model(PynamodbModel):
             return self.attribute_values
 
     @classmethod
+    def make_one(
+        cls,
+        hash_key: T.Any,
+        range_key: T.Optional[T.Any] = None,
+        **attributes: T.Any,
+    ):
+        key_attributes = {cls._hash_keyname: hash_key}
+        if range_key is not None:
+            key_attributes[cls._range_keyname] = range_key
+        return cls(**key_attributes, **attributes)
+
+    @classmethod
     def get_one_or_none(
         cls,
         hash_key: T.Any,
@@ -366,5 +378,6 @@ class Model(PynamodbModel):
                 rate_limit=rate_limit,
             )
         )
+
 
 T_MODEL = T.TypeVar("T_MODEL", bound=Model)
