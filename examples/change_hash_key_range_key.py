@@ -1,23 +1,23 @@
 # -*- coding: utf-8 -*-
 
 """
-验证 hash key 和 range key 支不支持 update 操作的.
+验证 hash key 和 range key 支不支持 update 操作.
 
 结论: **不支持**
 """
 
-import pynamodb_mate
-from pynamodb_mate.tests import py_ver
+import pynamodb_mate.api as pm
+from pynamodb_mate.tests.constants import PY_VER, PYNAMODB_VER
 
 
-class CommentModel(pynamodb_mate.Model):
+class CommentModel(pm.Model):
     class Meta:
-        table_name = f"pynamodb-mate-test-forum-comment-{py_ver}"
+        table_name = f"pynamodb-mate-test-forum-comment-{PY_VER}-{PYNAMODB_VER}"
         region = "us-east-1"
-        billing_mode = pynamodb_mate.PAY_PER_REQUEST_BILLING_MODE
+        billing_mode = pm.constants.PAY_PER_REQUEST_BILLING_MODE
 
-    post_id = pynamodb_mate.UnicodeAttribute(hash_key=True)
-    comment_nth = pynamodb_mate.NumberAttribute(range_key=True)
+    post_id: pm.REQUIRED_STR = pm.UnicodeAttribute(hash_key=True)
+    comment_nth: pm.REQUIRED_INT = pm.NumberAttribute(range_key=True)
 
 
 CommentModel.create_table(wait=True)

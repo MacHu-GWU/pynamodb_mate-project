@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+"""
+我这个项目中的单元测试和 Document 都利用了真实的 AWS DynamoDB Table 做测试, 这个脚本
+可以一键清理掉这些测试表.
+"""
 import boto3
 
 db_client = boto3.session.Session().client("dynamodb")
