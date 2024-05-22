@@ -101,13 +101,13 @@ class PutS3Response:
         When you want to create a new DynamoDB item after you put the large attribute
         S3 object, you can use this method to get the params for
         ``pynamodb_model.api.Model(**attributes)`` constructor.
+        Note that if an action.put_executed is False, then it means that the
+        S3 object already exists, so we still consider the "set large attribute"
+        operation is succeeded.
         """
         dct = dict()
         for action in self.actions:
-            if action.put_executed:
-                dct[action.attr] = action.s3_uri
-            else:
-                dct[action.attr] = None
+            dct[action.attr] = action.s3_uri
         return dct
 
     def to_update_actions(self, model_klass) -> T.List[Action]:
@@ -328,11 +328,8 @@ class LargeAttributeMixin:
             # this is for unit test purpose to simulate the DynamoDB operation failed
             if _error:
                 raise _error
-            model = cls(
-                pk=pk,
-                **attributes,
-                **put_s3_res.to_attributes(),
-            )
+            kwargs = dict(pk=pk, **attributes, **put_s3_res.to_attributes())
+            model = cls(**kwargs)
             model.save()
             return model
         except Exception as e:
@@ -445,7 +442,8 @@ class LargeAttributeMixin:
             old_model = cls.make_one(hash_key=pk, range_key=sk)
         old_model.delete()
 
-        for attr_name in attributes:
-            s3_uri = getattr(old_model, attr_name)
-            bucket, key = split_s3_uri(s3_uri)
-            s3_client.delete_object(Bucket=bucket, Key=key)
+        if clean_up_when_succeeded:
+            for attr_name in attributes:
+                s3_uri = getattr(old_model, attr_name)
+                bucket, key = split_s3_uri(s3_uri)
+                s3_client.delete_object(Bucket=bucket, Key=key)
