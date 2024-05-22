@@ -12,8 +12,10 @@ sub packages and modules
 
     attributes <attributes/__init__>
     patterns <patterns/__init__>
+    api <api>
     cipher <cipher>
     compat <compat>
     helpers <helpers>
     models <models>
+    type_hint <type_hint>
     

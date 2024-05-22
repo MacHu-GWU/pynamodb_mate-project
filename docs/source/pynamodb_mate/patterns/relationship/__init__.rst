@@ -1,7 +1,7 @@
-status_tracker
-==============
+relationship
+============
 
-.. automodule:: pynamodb_mate.patterns.status_tracker
+.. automodule:: pynamodb_mate.patterns.relationship
     :members:
 
 sub packages and modules

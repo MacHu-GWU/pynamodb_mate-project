@@ -1,7 +1,7 @@
-status_tracker
-==============
+large_attribute
+===============
 
-.. automodule:: pynamodb_mate.patterns.status_tracker
+.. automodule:: pynamodb_mate.patterns.large_attribute
     :members:
 
 sub packages and modules

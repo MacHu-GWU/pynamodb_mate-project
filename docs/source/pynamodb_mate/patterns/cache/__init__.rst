@@ -12,6 +12,7 @@ sub packages and modules
 
     backend <backend/__init__>
     abstract <abstract>
+    api <api>
     multi_layer <multi_layer>
     utils <utils>
     
