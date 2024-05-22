@@ -18,6 +18,10 @@
     :target: https://pypi.python.org/pypi/pynamodb_mate
 
 .. image:: https://img.shields.io/pypi/dm/pynamodb-mate.svg
+    :target: https://pypi.python.org/pypi/pynamodb_mate
+
+.. image:: https://img.shields.io/badge/Release_History!--None.svg?style=social
+    :target: https://github.com/MacHu-GWU/pynamodb_mate-project/blob/master/release-history.rst
 
 .. image:: https://img.shields.io/badge/STAR_Me_on_GitHub!--None.svg?style=social
     :target: https://github.com/MacHu-GWU/pynamodb_mate-project
@@ -53,15 +57,13 @@ Welcome to ``pynamodb_mate`` Documentation
 ==============================================================================
 📙 `Full Documentation is Here <https://pynamodb-mate.readthedocs.io/>`_
 
-.. contents::
-    :class: this-will-duplicate-information-and-it-is-still-useful-here
-    :depth: 1
-    :local:
+.. image:: https://pynamodb-mate.readthedocs.io/en/latest/_static/pynamodb_mate-logo.png
+    :target: https://pynamodb-mate.readthedocs.io/
 
 
 Overview
 ------------------------------------------------------------------------------
-``pynamodb_mate`` provides advanced best practice using DynamoDB in python. Built on top of `pynamodb <https://pynamodb.readthedocs.io/en/latest/>`_ python library. It maintain the compatibility to major version of ``pynamodb`` library. For example ``pynamodb_mate>=5.0.0,<6.0.0`` is compatible to ``pynamodb>=5.0.0,<6.0.0``.
+``pynamodb_mate`` provides advanced best practice using DynamoDB in python. Built on top of `pynamodb <https://pynamodb.readthedocs.io/en/latest/>`_ python library. It maintain the compatibility to major version of ``pynamodb`` library. For example ``pynamodb_mate>=5.0.0,<6.0.0`` is compatible to ``pynamodb>=5.0.0,<6.0.0``, ``pynamodb_mate==5.5.1.X`` is compatible to ``pynamodb>=5.5.1,<6.0.0``, ``pynamodb_mate==6.0.0.X`` is compatible to ``pynamodb>=6.0.0,<7.0.0``.
 
 
 Disclaimer
@@ -71,21 +73,15 @@ Even though the author is a Dynamodb Subject Matter Expert from AWS, but this pr
 
 Features
 ------------------------------------------------------------------------------
-Click on the link below to see detailed tutorial and examples.
+``pynamodb_mate`` provides some commonly used patterns. It is based on the author's experience providing solutions to many customers from different industries. Click on the link below to see detailed tutorial and examples.
 
-- ⭐ `Store Large Object in DynamoDB <https://github.com/MacHu-GWU/pynamodb_mate-project/blob/master/examples/Store-Large-Object-in-DynamoDB.ipynb>`_: This feature allows you to store any Python object and arbitrary big data in DynamoDB that can exceed the 400KB limit.
-- ⭐ `Client Side Encryption <https://github.com/MacHu-GWU/pynamodb_mate-project/blob/master/examples/Client-Side-Encryption.ipynb>`_: This feature allows you to use your own encryption key to encrypt your data before it is sent to the DynamoDB.
-- ⭐ `Compressed Attribute <https://github.com/MacHu-GWU/pynamodb_mate-project/blob/master/examples/Compressed-Attribute.ipynb>`_: This feature can automatically compress the data before it is sent to the DynamoDB.
-- ⭐ `AWS DynamoDB Console Url <https://github.com/MacHu-GWU/pynamodb_mate-project/blob/master/examples/AWS-DynamoDB-Console-Url.ipynb>`_: This feature can print the AWS DynamoDB console url for the table, items. You can use this in you log to quickly jump to the console to debug.
-
-
-DynamoDB Patterns
-------------------------------------------------------------------------------
-``pynamodb_mate`` also provides some commonly used patterns. It is based on the author's experience providing solutions to many customers from different industries. Click on the link below to see detailed tutorial and examples.
-
-- 🎉 `Cache <https://github.com/MacHu-GWU/pynamodb_mate-project/blob/master/examples/patterns/cache.ipynb>`_: This feature gives you a "Redis" liked, serverless, Zero-ops, auto-scaling, high performance, pay-as-you-go cache layer based on DynamoDB.
-- 🎉 `Status Tracker <https://github.com/MacHu-GWU/pynamodb_mate-project/blob/master/examples/patterns/status-tracker.ipynb>`_: This feature gives you the ability to track status of each task, and error-handling, retry, concurrency control out-of-the-box.
-- 🎉 `Relationship <https://github.com/MacHu-GWU/pynamodb_mate-project/blob/master/examples/patterns/relationship.ipynb>`_: This feature allow you to manage mass amount entity and one-to-many, many-to-many relationship in DynamoDB using the ultimate data modeling strategy.
+- ⭐ `Store Large Object in DynamoDB <https://pynamodb-mate.readthedocs.io/en/latest/01-Store-Large-Object-in-DynamoDB/index.html>`_: This feature allows you to store any Python object and arbitrary big data in DynamoDB that can exceed the 400KB limit. It also handles data consistency and data integrity between DynamoDB and S3.
+- ⭐ `Client Side Encryption <https://pynamodb-mate.readthedocs.io/en/latest/02-Client-Side-Encryption/index.html>`_: This feature allows you to use your own encryption key to encrypt your data before it is sent to the DynamoDB.
+- ⭐ `Compressed Attribute <https://pynamodb-mate.readthedocs.io/en/latest/03-Compressed-Attribute/index.html>`_: This feature can automatically compress the data before it is sent to the DynamoDB, it would save you a lot of money if you use JSON attribute in DynamoDB.
+- ⭐ `AWS DynamoDB Console Url <https://pynamodb-mate.readthedocs.io/en/latest/04-DynamoDB-Consule-Url/index.html>`_: This feature can print the AWS DynamoDB console url for the table, items. You can use this in you log to quickly jump to the console to debug.
+- ⭐ `Use DynamoDB as a Cache Backend <https://pynamodb-mate.readthedocs.io/en/latest/05-Use-DynamoDB-as-Cache-Backend/index.html>`_: This feature gives you a "Redis" liked, serverless, Zero-ops, auto-scaling, high performance, pay-as-you-go cache layer based on DynamoDB.
+- ⭐ `Enable status tracking for business critical application using Amazon DynamoDB <https://pynamodb-mate.readthedocs.io/en/latest/06-Status-Tracker/index.html>`_: This feature gives you the ability to track status of each task, and error-handling, retry, concurrency control out-of-the-box.
+- ⭐ `Modeling Relational Data in DynamoDB <https://pynamodb-mate.readthedocs.io/en/latest/07-Modeling-Relational-Data-in-DynamoDB/index.html>`_: This feature allow you to manage mass amount entity and one-to-many, many-to-many relationship in DynamoDB using the ultimate data modeling strategy that has high performance and scales well. Made data modeling in DynamoDB deadly simple.
 
 
 .. _install:
