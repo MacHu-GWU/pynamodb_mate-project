@@ -5,6 +5,7 @@ pytest-cov                          # coverage test
 # extra
 boto3
 boto_session_manager>=1.7.2,<2.0.0
+s3pathlib>=2.1.2,<3.0.0
 pycryptodome>=3.18.0,<4.0.0
 
 # mock boto3
