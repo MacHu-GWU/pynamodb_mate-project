@@ -284,6 +284,9 @@ class LargeAttributeMixin:
         clean_up_when_failed: bool = True,
         _error: T.Optional[Exception] = None,
     ):
+        """
+        Wrap the DynamoDB put_item and S3 put_object operation in a transaction.
+        """
         put_s3_res = cls.put_s3(
             s3_client=s3_client,
             pk=pk,
@@ -324,6 +327,9 @@ class LargeAttributeMixin:
         clean_up_when_failed: bool = True,
         _error: T.Optional[Exception] = None,
     ):
+        """
+        Wrap the DynamoDB update_item and S3 put_object operation in a transaction.
+        """
         put_s3_res = cls.put_s3(
             s3_client=s3_client,
             pk=pk,
@@ -391,6 +397,9 @@ class LargeAttributeMixin:
         clean_up_when_succeeded: bool = True,
         _error: T.Optional[Exception] = None,
     ):
+        """
+        Wrap the DynamoDB delete_item and S3 delete_object operation in a transaction.
+        """
         # note: the pynamodb.Model.delete() method doesn't have ``return_values``
         # parameter, we can't get the old model after delete it. So we have to
         # manually get the old model for cleaning up S3 object when deletion succeeded.
@@ -419,3 +428,53 @@ class LargeAttributeMixin:
                 s3_uri = getattr(old_model, attr_name)
                 s3_uri_list.append(s3_uri)
             batch_delete_s3_objects(s3_client, s3_uri_list)
+
+    @classmethod
+    def clean_up_dangling_s3_objects(
+        cls: T.Union[T.Type["Model"], T.Type["LargeAttributeMixin"]],
+        s3_client: T.Union["S3Client", T.Dict[str, "S3Client"]],
+        attributes: T.List[str],
+        bucket: str,
+        prefix: str,
+    ) -> T.List[str]:  # pragma: no cover
+        """
+        Clean up dangling S3 objects. A dangling S3 object is an object that is not
+        referenced by any DynamoDB item.
+        """
+        # get all existing large attribute S3 URIs
+        if len(attributes) == 0:
+            raise ValueError
+        attr = attributes[0]
+        condition = getattr(cls, attr).exists()
+        for attr in attributes[1:]:
+            condition |= getattr(cls, attr).exists()
+
+        existing_large_attribute_s3_uri_set = set()
+        for model in cls.scan(
+            filter_condition=condition,
+            attributes_to_get=attributes,
+        ):
+            for attr in attributes:
+                value = getattr(model, attr)
+                if value is not None:
+                    existing_large_attribute_s3_uri_set.add(value)
+
+        # if an S3 object is not in the existing_large_attribute_s3_uri_set,
+        # then it is a dangling S3 object.
+        paginator = s3_client.get_paginator("list_objects_v2")
+        response_iterator = paginator.paginate(
+            Bucket=bucket,
+            Prefix=prefix,
+            PaginationConfig={
+                "PageSize": 1000,
+            },
+        )
+        to_delete_s3_uri_list = list()
+        for response in response_iterator:
+            for dct in response.get("Contents", []):
+                s3_key = dct["Key"]
+                s3_uri = join_s3_uri(bucket, s3_key)
+                if s3_uri not in existing_large_attribute_s3_uri_set:
+                    to_delete_s3_uri_list.append(s3_uri)
+        batch_delete_s3_objects(s3_client, to_delete_s3_uri_list)
+        return to_delete_s3_uri_list
