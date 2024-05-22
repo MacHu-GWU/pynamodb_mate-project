@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import pytest
+import copy
 from datetime import datetime, timezone
 
 from s3pathlib import S3Path
@@ -18,7 +19,6 @@ from pynamodb_mate.patterns.large_attribute.api import (
     split_s3_uri,
     LargeAttributeMixin,
 )
-from rich import print as rprint
 
 
 class Document(pm.Model, LargeAttributeMixin):
@@ -54,81 +54,141 @@ class Base(BaseTest):
     def setup_class_post_hook(cls):
         S3Path(f"s3://{BUCKET}/{PREFIX}").to_dir().delete(bsm=cls.bsm)
 
-    # def test(self):
-    #     # ----------------------------------------------------------------------
-    #     # Create
-    #     # ----------------------------------------------------------------------
-    #     pk = "id-1"
-    #     html_data = "<b>Hello Alice</b>".encode("utf-8")
-    #     image_data = "this is image one".encode("utf-8")
-    #     utc_now = get_utc_now()
-    #     put_s3_res = Document.put_s3(
-    #         self.bsm.s3_client,
-    #         pk=pk,
-    #         sk=None,
-    #         kvs=dict(html=html_data, image=image_data),
-    #         bucket=BUCKET,
-    #         prefix=PREFIX,
-    #         update_at=utc_now,
-    #     )
-    #     # try:
-    #     doc = Document(
-    #         pk=pk,
-    #         update_at=utc_now,
-    #         data={"version": 1},
-    #         **put_s3_res.to_attributes(),
-    #     )
-    #     doc.save()
-    #     # except Exception as e:
-    #     #     print(e)
-    #     #     put_s3_res.clean_up_when_create_dynamodb_item_failed(self.s3_client)
-    #
-    #     # ----------------------------------------------------------------------
-    #     # Update
-    #     # ----------------------------------------------------------------------
-    #     html_data = "<b>Hello Bob</b>".encode("utf-8")
-    #     image_data = "this is image two".encode("utf-8")
-    #     old_doc = Document.get(pk)
-    #     utc_now = get_utc_now()
-    #     put_s3_res = Document.put_s3(
-    #         self.s3_client,
-    #         pk=pk,
-    #         sk=None,
-    #         kvs=dict(html=html_data, image=image_data),
-    #         bucket=BUCKET,
-    #         prefix=PREFIX,
-    #         update_at=utc_now,
-    #     )
-    #     try:
-    #         actions = [
-    #             getattr(Document, action.attr).set(action.s3_uri)
-    #             for action in put_s3_res.actions
-    #         ]
-    #         old_doc.update(actions=actions)
-    #         put_s3_res.clean_up_when_update_dynamodb_item_succeeded(
-    #             self.s3_client, old_doc
-    #         )
-    #     except Exception as e:
-    #         put_s3_res.clean_up_when_update_dynamodb_item_failed(
-    #             self.s3_client, old_doc
-    #         )
-    #
-    #     # ----------------------------------------------------------------------
-    #     # Delete
-    #     # ----------------------------------------------------------------------
-    #     doc = Document.get(pk)
-    #     doc.delete()
-    #
-    #     for s3_uri in [doc.html, doc.image]:
-    #         if s3_uri:
-    #             bucket, key = split_s3_uri(s3_uri)
-    #             self.s3_client.delete_object(Bucket=bucket, Key=key)
+    def test_no_transaction(self):
+        # ----------------------------------------------------------------------
+        # Create
+        # ----------------------------------------------------------------------
+        pk = "id-1"
+        sk = None
+        html_data = "<b>Hello Alice</b>".encode("utf-8")
+        image_data = "this is image one".encode("utf-8")
+        utc_now = get_utc_now()
+        put_s3_res = Document.put_s3(
+            self.bsm.s3_client,
+            pk=pk,
+            sk=None,
+            kvs=dict(html=html_data, image=image_data),
+            bucket=BUCKET,
+            prefix=PREFIX,
+            update_at=utc_now,
+        )
+        try:
+            doc = Document(
+                pk=pk,
+                update_at=utc_now,
+                data={"version": 1},
+                **put_s3_res.to_attributes(),
+            )
+            doc.save()
+        except Exception as e:
+            put_s3_res.clean_up_created_s3_object_when_create_dynamodb_item_failed(
+                self.s3_client
+            )
+
+        # DynamoDB write operation should be succeeded
+        doc = Document.get_one_or_none(pk, sk)
+        assert doc.data["version"] == 1
+        # S3 object should be created
+        key = get_s3_key(
+            pk=pk,
+            sk=sk,
+            attr=Document.html.attr_name,
+            value=html_data,
+            prefix=PREFIX,
+        )
+        assert S3Path(f"s3://{BUCKET}/{key}").read_bytes(bsm=self.bsm) == html_data
+        key = get_s3_key(
+            pk=pk,
+            sk=sk,
+            attr=Document.image.attr_name,
+            value=image_data,
+            prefix=PREFIX,
+        )
+        assert S3Path(f"s3://{BUCKET}/{key}").read_bytes(bsm=self.bsm) == image_data
+
+        # ----------------------------------------------------------------------
+        # Update
+        # ----------------------------------------------------------------------
+        html_data = "<b>Hello Bob</b>".encode("utf-8")
+        image_data = "this is image two".encode("utf-8")
+        old_doc = Document.get(pk, sk)
+        immutable_old_doc = copy.copy(old_doc)
+        utc_now = get_utc_now()
+        put_s3_res = Document.put_s3(
+            self.s3_client,
+            pk=pk,
+            sk=None,
+            kvs=dict(html=html_data, image=image_data),
+            bucket=BUCKET,
+            prefix=PREFIX,
+            update_at=utc_now,
+        )
+
+        try:
+            actions = [
+                Document.update_at.set(utc_now),
+                Document.data.set({"version": 2}),
+            ]
+            actions.extend(put_s3_res.to_update_actions(Document))
+            old_doc.update(actions=actions)
+            put_s3_res.clean_up_old_s3_object_when_update_dynamodb_item_succeeded(
+                self.s3_client,
+                immutable_old_doc,
+            )
+        except Exception as e:
+            put_s3_res.clean_up_created_s3_object_when_update_dynamodb_item_failed(
+                self.s3_client,
+            )
+
+        # DynamoDB update operation should be succeeded
+        doc = Document.get_one_or_none(pk, sk)
+        assert doc.data["version"] == 2
+
+        # S3 object of old document should be cleaned up
+        assert S3Path(immutable_old_doc.html).exists(bsm=self.bsm) is False
+        assert S3Path(immutable_old_doc.image).exists(bsm=self.bsm) is False
+
+        # S3 object of new document should be created
+        key = get_s3_key(
+            pk=pk,
+            sk=sk,
+            attr=Document.html.attr_name,
+            value=html_data,
+            prefix=PREFIX,
+        )
+        assert S3Path(f"s3://{BUCKET}/{key}").read_bytes(bsm=self.bsm) == html_data
+        key = get_s3_key(
+            pk=pk,
+            sk=sk,
+            attr=Document.image.attr_name,
+            value=image_data,
+            prefix=PREFIX,
+        )
+        assert S3Path(f"s3://{BUCKET}/{key}").read_bytes(bsm=self.bsm) == image_data
+
+        # ----------------------------------------------------------------------
+        # Delete
+        # ----------------------------------------------------------------------
+        doc = Document.get(pk)
+        doc.delete()
+
+        for s3_uri in [doc.html, doc.image]:
+            if s3_uri:
+                bucket, key = split_s3_uri(s3_uri)
+                self.s3_client.delete_object(Bucket=bucket, Key=key)
+
+        # DynamoDB delete operation should be succeeded
+        assert Document.get_one_or_none(pk, sk) is None
+
+        # S3 object of old document should be cleaned up
+        assert S3Path(doc.html).exists(bsm=self.bsm) is False
+        assert S3Path(doc.image).exists(bsm=self.bsm) is False
 
     def test_transaction_has_cleanup(self):
         # ----------------------------------------------------------------------
         # Create
         # ----------------------------------------------------------------------
-        pk = "id-1"
+        pk = "id-2"
         sk = None
         html_data = "<b>Hello Alice</b>".encode("utf-8")
         image_data = "this is image one".encode("utf-8")
@@ -338,7 +398,7 @@ class Base(BaseTest):
         # ----------------------------------------------------------------------
         # Create
         # ----------------------------------------------------------------------
-        pk = "id-2"
+        pk = "id-3"
         sk = None
         html_data = "<b>Hello Alice</b>".encode("utf-8")
         image_data = "this is image one".encode("utf-8")

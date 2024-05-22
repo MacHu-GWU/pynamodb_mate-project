@@ -26,9 +26,8 @@ from datetime import datetime
 
 from pynamodb.constants import STRING
 from pynamodb.expressions.update import Action
-from ...vendor.iterable import group_by
 
-from ...helpers import join_s3_uri, is_s3_object_exists
+from ...helpers import join_s3_uri, is_s3_object_exists, batch_delete_s3_objects
 
 if T.TYPE_CHECKING:  # pragma: no cover
     from mypy_boto3_s3.client import S3Client
@@ -121,36 +120,6 @@ class PutS3Response:
             for action in self.actions
         ]
 
-    def batch_delete(
-        self,
-        s3_client: "S3Client",
-        s3_uri_list: T.List[str],
-    ):
-        """
-        Batch delete many S3 objects. If they share the same bucket, then use
-        the ``s3_client.delete_objects`` method. If they do not share the same bucket,
-        then use ``s3_client.delete_object`` method.
-
-        :param s3_client: ``boto3.client("s3")`` object.
-        :param s3_uri_list: example: ["s3://bucket/key1", "s3://bucket/key2"].
-        """
-        buckets = list()
-        keys = list()
-        pairs = list()
-        for s3_uri in s3_uri_list:
-            bucket, key = split_s3_uri(s3_uri)
-            pairs.append((bucket, key))
-
-            buckets.append(bucket)
-            keys.append(key)
-
-        groups = group_by(pairs, get_key=lambda x: x[0])
-        for bucket, bucket_key_pairs in groups.items():
-            s3_client.delete_objects(
-                Bucket=bucket,
-                Delete=dict(Objects=[dict(Key=key) for _, key in bucket_key_pairs]),
-            )
-
     def clean_up_created_s3_object_when_create_dynamodb_item_failed(
         self,
         s3_client: "S3Client",
@@ -165,7 +134,7 @@ class PutS3Response:
         for action in self.actions:
             if action.put_executed:
                 s3_uri_list.append(action.s3_uri)
-        self.batch_delete(s3_client, s3_uri_list)
+        batch_delete_s3_objects(s3_client, s3_uri_list)
 
     def clean_up_old_s3_object_when_update_dynamodb_item_succeeded(
         self,
@@ -195,7 +164,7 @@ class PutS3Response:
             if action.put_executed:
                 # 删除旧的 S3 object
                 s3_uri_list.append(getattr(old_model, action.attr))
-        self.batch_delete(s3_client, s3_uri_list)
+        batch_delete_s3_objects(s3_client, s3_uri_list)
 
     def clean_up_created_s3_object_when_update_dynamodb_item_failed(
         self,
@@ -225,7 +194,7 @@ class PutS3Response:
             if action.put_executed:
                 # 删除新的 S3 object
                 s3_uri_list.append(action.s3_uri)
-        self.batch_delete(s3_client, s3_uri_list)
+        batch_delete_s3_objects(s3_client, s3_uri_list)
 
 
 class LargeAttributeMixin:
@@ -436,14 +405,17 @@ class LargeAttributeMixin:
             if cls._range_keyname:  # pragma: no cover
                 attributes_to_get.append(cls._range_keyname)
             old_model = cls.get(
-                hash_key=pk, range_key=sk, attributes_to_get=attributes_to_get
+                hash_key=pk,
+                range_key=sk,
+                attributes_to_get=attributes_to_get,
             )
         else:
             old_model = cls.make_one(hash_key=pk, range_key=sk)
         old_model.delete()
 
         if clean_up_when_succeeded:
+            s3_uri_list = list()
             for attr_name in attributes:
                 s3_uri = getattr(old_model, attr_name)
-                bucket, key = split_s3_uri(s3_uri)
-                s3_client.delete_object(Bucket=bucket, Key=key)
+                s3_uri_list.append(s3_uri)
+            batch_delete_s3_objects(s3_client, s3_uri_list)
