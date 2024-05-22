@@ -28,6 +28,15 @@ class DynamoDBBackend(
     """
     Base class for DynamoDB cache backend. You have to implement your own
     ``serialize()`` and ``deserialize()`` methods before use.
+
+    :param table_name: DynamoDB table name
+    :param region: aws region
+    :param billing_mode: billing model to use when creating the table
+    :param write_capacity_units: WCU configuration when creating the table
+    :param read_capacity_units: RCU configuration when creating the table
+    :param create: if True, create the table when initializing the backend,
+        if table already exists, then do nothing. if False, you should create
+        the table manually before using the backend.
     """
 
     def __init__(

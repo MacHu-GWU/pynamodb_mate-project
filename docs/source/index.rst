@@ -2,6 +2,9 @@ Release v\ |release| (:ref:`What's new? <release_history>`).
 
 .. include:: ../../README.rst
 
+.. autotoctree::
+    :maxdepth: 1
+
 .. include:: ../../AUTHORS.rst
 
 
