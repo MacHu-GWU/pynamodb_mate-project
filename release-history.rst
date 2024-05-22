@@ -21,7 +21,7 @@ Backlog
 **Miscellaneous**
 
 
-5.5.1.1 (2024-05-21)
+5.5.1.1 (2024-05-22)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Background**
 
@@ -36,6 +36,7 @@ Backlog
 **Minor Improvements**
 
 - Rework the unit test, now it uses both mock and real AWS DynamoDB table for testing.
+- Rework the documentation site.
 
 **Miscellaneous**
 
