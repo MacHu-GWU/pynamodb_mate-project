@@ -15,5 +15,7 @@ python:
     path: .
   - requirements: requirements.txt
   - requirements: requirements-doc.txt
+  - requirements: requirements-dev.txt
+  - requirements: requirements-test.txt
   - requirements: requirements-encrypt.txt
   - requirements: requirements-furo-sphinx-search.txt
