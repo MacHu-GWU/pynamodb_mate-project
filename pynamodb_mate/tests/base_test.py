@@ -64,7 +64,7 @@ class BaseTest(mock_aws.BaseMockTest):
         if cls.use_mock:
             cls.s3_client = cls.bsm.s3_client
             cls.create_bucket(cls.s3_client, BUCKET)
-            cls.conn = Connection()
+            cls.conn = Connection(region="us-east-1")
             for model_class in cls.model_list:
                 model_class.create_table(wait=False)
         else:
@@ -73,7 +73,7 @@ class BaseTest(mock_aws.BaseMockTest):
             with cls.bsm.awscli():
                 cls.s3_client = cls.bsm.s3_client
                 cls.create_bucket(cls.s3_client, BUCKET)
-                cls.conn = Connection()
+                cls.conn = Connection(region="us-east-1")
                 _ = cls.conn.session.get_credentials()
                 for model_class in cls.model_list:
                     model_class.create_table(wait=True)
