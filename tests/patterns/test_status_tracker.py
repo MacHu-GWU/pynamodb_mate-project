@@ -21,7 +21,6 @@ from pynamodb_mate.patterns.status_tracker.impl import (
     TaskAlreadySucceedError,
     TaskIgnoredError,
 )
-from rich import print as rprint
 
 
 # ------------------------------------------------------------------------------
