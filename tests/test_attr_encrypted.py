@@ -19,27 +19,22 @@ class ArchiveModel(pm.Model):
     secret_message: pm.REQUIRED_BINARY = pm.attributes.EncryptedUnicodeAttribute(
         encryption_key=ENCRYPTION_KEY,
         determinative=True,
-        legacy_encoding=False,
     )
     secret_binary: pm.REQUIRED_BINARY = pm.attributes.EncryptedBinaryAttribute(
         encryption_key=ENCRYPTION_KEY,
         determinative=False,
-        legacy_encoding=False,
     )
     secret_integer: pm.REQUIRED_BINARY = pm.attributes.EncryptedNumberAttribute(
         encryption_key=ENCRYPTION_KEY,
         determinative=True,
-        legacy_encoding=False,
     )
     secret_float: pm.REQUIRED_BINARY = pm.attributes.EncryptedNumberAttribute(
         encryption_key=ENCRYPTION_KEY,
         determinative=False,
-        legacy_encoding=False,
     )
     secret_data: pm.REQUIRED_BINARY = pm.attributes.EncryptedJsonDictAttribute(
         encryption_key=ENCRYPTION_KEY,
         determinative=False,
-        legacy_encoding=False,
     )
 
 

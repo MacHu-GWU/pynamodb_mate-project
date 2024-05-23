@@ -44,11 +44,6 @@ def test_api():
     _ = pm.REQUIRED_BINARY
     _ = pm.OPTIONAL_BINARY
     _ = pm.REQUIRED_DATETIME
-    _ = pm.OPTIONAL_DATETIME
-    _ = pm.attributes.S3BackedAttribute
-    _ = pm.attributes.S3BackedBigBinaryAttribute
-    _ = pm.attributes.S3BackedBigTextAttribute
-    _ = pm.attributes.S3BackedJsonDictAttribute
     _ = pm.attributes.CompressedAttribute
     _ = pm.attributes.CompressedUnicodeAttribute
     _ = pm.attributes.CompressedBinaryAttribute

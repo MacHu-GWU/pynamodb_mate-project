@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from .s3backed import S3BackedAttribute
-from .s3backed import S3BackedBigBinaryAttribute
-from .s3backed import S3BackedBigTextAttribute
-from .s3backed import S3BackedJsonDictAttribute
 from .compressed import CompressedAttribute
 from .compressed import CompressedUnicodeAttribute
 from .compressed import CompressedBinaryAttribute

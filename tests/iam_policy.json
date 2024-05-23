@@ -14,9 +14,9 @@
                 "dynamodb:Query"
             ],
             "Resource": [
-                "arn:aws:s3:::aws-data-lab-sanhe-for-everything",
-                "arn:aws:s3:::aws-data-lab-sanhe-for-everything/projects/pynamodb_mate/unit-test/*",
-                "arn:aws:dynamodb:us-east-1:669508176277:table/pynamodb-mate-test*/index/*"
+                "arn:aws:s3:::bmt-app-dev-us-east-1-data",
+                "arn:aws:s3:::bmt-app-dev-us-east-1-data/projects/pynamodb_mate/unit-test/*",
+                "arn:aws:dynamodb:us-east-1:{AWS_ACCOUNT_ID}:table/pynamodb-mate-test*/index/*"
             ]
         },
         {
@@ -34,7 +34,7 @@
                 "dynamodb:Query",
                 "dynamodb:UpdateItem"
             ],
-            "Resource": "arn:aws:dynamodb:us-east-1:669508176277:table/pynamodb-mate-test*"
+            "Resource": "arn:aws:dynamodb:us-east-1:{AWS_ACCOUNT_ID}:table/pynamodb-mate-test*"
         }
     ]
 }
