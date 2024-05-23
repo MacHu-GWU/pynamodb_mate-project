@@ -191,6 +191,7 @@ class Base(BaseTest):
         # run Step 1, it will succeed
         # ----------------------------------------------------------------------
         utc_now = get_utc_now()
+        time.sleep(0.001)
 
         # create a new task
         step1 = Step1.make_and_save(task_id=task_id, data={"version": 0})
@@ -261,6 +262,7 @@ class Base(BaseTest):
         assert step2.is_locked() is False
 
         utc_now = get_utc_now()
+        time.sleep(0.001)
 
         with pytest.raises(UserError):
             with Step2.start(task_id, debug=False) as exec_ctx:
@@ -302,6 +304,7 @@ class Base(BaseTest):
         # run Step 2 again, it will succeeded this time
         # ----------------------------------------------------------------------
         utc_now = get_utc_now()
+        time.sleep(0.001)
 
         with Step2.start(task_id, debug=False) as exec_ctx:
             exec_ctx.set_data({"version": 2})
@@ -366,6 +369,7 @@ class Base(BaseTest):
 
             # check the database side updated task
             utc_now_1 = get_utc_now()
+            time.sleep(0.001)
             step1 = Step1.get_one_or_none(task_id=task_id)
             # check if the task status is "in_progress",
             # because another worker is working on it
@@ -389,6 +393,7 @@ class Base(BaseTest):
         # run Step 1 three times, and all of them failed, and it reaches ignored status
         # ----------------------------------------------------------------------
         utc_now = get_utc_now()
+        time.sleep(0.001)
         exec_ctx: ExecutionContext
         with pytest.raises(UserError):
             with Step1.start(task_id, debug=False) as exec_ctx:
