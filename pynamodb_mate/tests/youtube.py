@@ -369,6 +369,20 @@ class RelationshipSetting(rl.RelationshipSetting):
             one_entity_id=user_id,
         )
 
+    def find_owner_of_a_video(
+        self,
+        video_id: str,
+    ) -> User:
+        return User.get(
+            hash_key=self.find_one_by_many(
+                one_to_many_r_type=video_ownership_relationship_type,
+                many_entity_id=video_id,
+            )
+            .one_or_none()
+            .sk_id,
+            range_key=f"{user_entity_type.name}_{rl.ROOT}",
+        )
+
     def find_channels_created_by_a_user(
         self,
         user_id: str,

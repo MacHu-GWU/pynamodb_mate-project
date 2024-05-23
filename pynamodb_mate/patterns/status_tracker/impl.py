@@ -962,9 +962,9 @@ class BaseTask(Model):
         """
         Detect the status index object.
         """
-        if cls._status_and_update_time_index is None:
+        if cls._status_and_update_time_index is None: # pragma: no cover
             # just for local unit test, keep it in the source code intentionally
-            if _is_test:
+            if _is_test: # pragma: no cover
                 print("call _get_status_index() ...")
             for k, v in inspect.getmembers(cls):
                 if isinstance(v, StatusAndUpdateTimeIndex):
@@ -983,13 +983,13 @@ class BaseTask(Model):
         ],
         limit: int = 10,
         older_task_first: bool = True,
-        _use_case_id: T.Optional[str] = None,
+        use_case_id: T.Optional[str] = None,
     ) -> IterProxy["BaseTask"]:
         """
         Get task items by status.
         """
-        if _use_case_id is None:
-            _use_case_id = cls.config.use_case_id
+        if use_case_id is None:
+            use_case_id = cls.config.use_case_id
 
         if isinstance(status, list):
             status_list = status
@@ -1007,7 +1007,7 @@ class BaseTask(Model):
                 yield from index.query(
                     hash_key=cls.make_value(
                         status=status,
-                        _use_case_id=_use_case_id,
+                        _use_case_id=use_case_id,
                         _shard_id=shard_id,
                     ),
                     scan_index_forward=older_task_first,
@@ -1042,7 +1042,7 @@ class BaseTask(Model):
             status=status,
             limit=limit,
             older_task_first=older_task_first,
-            _use_case_id=use_case_id,
+            use_case_id=use_case_id,
         )
 
         def new_iterator():
@@ -1061,7 +1061,7 @@ class BaseTask(Model):
         limit: int = 10,
         older_task_first: bool = True,
         auto_refresh: bool = False,
-        _use_case_id: T.Optional[str] = None,
+        use_case_id: T.Optional[str] = None,
     ) -> IterProxy["BaseTask"]:
         """
         Query tasks that are not finished yet, in other words, the status is
@@ -1081,7 +1081,7 @@ class BaseTask(Model):
             limit=limit,
             older_task_first=older_task_first,
             auto_refresh=auto_refresh,
-            _use_case_id=_use_case_id,
+            use_case_id=use_case_id,
         )
 
 

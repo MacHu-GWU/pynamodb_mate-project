@@ -17,18 +17,22 @@ Backlog
 **Miscellaneous**
 
 
-6.0.0.1 (Planned)
+6.0.0.1 (2024-05-23)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**💥Breaking change**
+
+- fully support pynamodb 6.X, drop compatible to pynamodb 5.X.
+- rework the ``status_tracker`` pattern to ensure strong consistency in high concurrent workload. Due to the change that the ``Index.query`` is instance method from pynamodb 6.X, the old ``status_tracker`` implementation won't work in pynamodb 6.X. We have to completely remove the old implementation and re-implement the ``status_tracker`` pattern.
+
 **Features and Improvements**
 
 - fully support pynamodb 6.X, drop compatible to pynamodb 5.X.
-- add the ``status_tracker_v2`` pattern to ensure strong consistency in high concurrent workload.
+- rework the ``status_tracker`` pattern to ensure strong consistency in high concurrent workload.
 
 **Minor Improvements**
 
-**Bugfixes**
-
-**Miscellaneous**
+- update the ``status_tracker`` document.
+- improve code coverage test.
 
 
 5.5.1.1 (2024-05-22)

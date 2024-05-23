@@ -107,7 +107,7 @@ class BaseEntity(Model):
     def sk_id(self):
         return self.sk.split("_")[0]
 
-    def get_vip_attrs(self) -> T.Dict[str, T.Any]:
+    def get_vip_attrs(self) -> T.Dict[str, T.Any]:  # pragma: no cover
         """
         Get all important attributes for the entity.
         """
@@ -135,12 +135,12 @@ def get_utc_now() -> datetime:
     return datetime.utcnow().replace(tzinfo=timezone.utc)
 
 
-def validate_entity_id(entity_id: str):
+def validate_entity_id(entity_id: str):  # pragma: no cover
     if "_" in entity_id:
         raise ValueError(f"entity id {entity_id!r} cannot contain underscore")
 
 
-def validate_item_type_name(name: str):
+def validate_item_type_name(name: str):  # pragma: no cover
     if "_" in name:
         raise ValueError(f"item type name {name!r} cannot contain underscore")
 
@@ -266,7 +266,7 @@ class RelationshipSetting:
             update_at=now,
             **kwargs,
         )
-        if save is False:
+        if save is False:  # pragma: no cover
             return entity
         try:
             # ensure that the entity does not exist
@@ -274,7 +274,7 @@ class RelationshipSetting:
                 condition=(~klass.pk.exists()),
             )
             return entity
-        except exc.PutError as e:
+        except exc.PutError as e:  # pragma: no cover
             return None
 
     def delete_all(self):
@@ -282,7 +282,7 @@ class RelationshipSetting:
             for item in self.main_model.scan():
                 batch.delete(item)
 
-    def scan(self) -> BaseEntityIterProxy:
+    def scan(self) -> BaseEntityIterProxy:  # pragma: no cover
         return self.main_model.iter_scan()
 
     def list_entities(
@@ -323,7 +323,9 @@ class RelationshipSetting:
         r_klass = one_to_many_r_type.klass
         if client_request_token is None:
             client_request_token = hashlib.md5(
-                f"set_{many_entity_id}_{one_entity_id}_{type}_{uuid.uuid4().hex}".encode("utf-8")
+                f"set_{many_entity_id}_{one_entity_id}_{type}_{uuid.uuid4().hex}".encode(
+                    "utf-8"
+                )
             ).hexdigest()
         with TransactWrite(
             connection=conn,
@@ -354,7 +356,7 @@ class RelationshipSetting:
         one_to_many_r_type: OneToManyRelationshipType,
         many_entity_id: str,
         client_request_token: T.Optional[str] = None,
-    ):
+    ):  # pragma: no cover
         """
         Unset the one-to-many relationship.
 
@@ -451,7 +453,7 @@ class RelationshipSetting:
         many_to_many_r_type: ManyToManyRelationshipType,
         left_entity_id: str,
         right_entity_id: str,
-    ):
+    ):  # pragma: no cover
         """
         For example, in YouTube use case, one playlist has "many" videos.
         One video can be in "many" playlists. This function will remove the

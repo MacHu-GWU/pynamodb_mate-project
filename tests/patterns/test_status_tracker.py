@@ -155,9 +155,9 @@ class Base(BaseTest):
         self._test_1_happy_path()
         self._test_2_lock_mechanism()
         self._test_3_retry_and_ignore()
-        self._test_4()
+        self._test_4_task_is_not_initialized()
 
-        # self._test_11_query_by_status()
+        self._test_11_query_by_status()
 
     def _test_constructor(self):
         step1 = Step1.make(task_id="t-0")
@@ -178,6 +178,9 @@ class Base(BaseTest):
         assert step1.status == Step1StatusEnum.failed.value
         assert step1.status_name == StatusNameEnum.failed.value
         assert step1.shard_id == 1
+
+        with pytest.raises(ValueError):
+            Step1.make_value(status=0, _task_id=None, _shard_id=None)
 
     def _test_1_happy_path(self):
         """
@@ -443,7 +446,7 @@ class Base(BaseTest):
             with Step1.start(task_id, detailed_error=True, debug=False) as exec_ctx:
                 pass
 
-    def _test_4(self):
+    def _test_4_task_is_not_initialized(self):
         task_id = "t-4"
 
         with pytest.raises(TaskIsNotInitializedError):
@@ -466,7 +469,7 @@ class Base(BaseTest):
 
         # each status code only has one item
         for ith, status_enum in enumerate(Step1StatusEnum, start=1):
-            res = list(Step1.query_by_status(status=status_enum.value))
+            res = list(Step1.query_by_status(status=status_enum))
             assert len(res) == 1
             assert res[0].task_id == f"t-{ith}"
             break
