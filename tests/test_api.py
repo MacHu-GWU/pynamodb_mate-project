@@ -74,13 +74,18 @@ def test_api():
     _ = pm.patterns.relationship.OneToManyRelationshipType
     _ = pm.patterns.relationship.ManyToManyRelationshipType
     _ = pm.patterns.relationship.RelationshipSetting
-    _ = pm.patterns.status_tracker.BaseStatusEnum
-    _ = pm.patterns.status_tracker.StatusAndUpdateTimeIndex
+    _ = pm.patterns.status_tracker.TaskExecutionError
+    _ = pm.patterns.status_tracker.TaskIsNotInitializedError
+    _ = pm.patterns.status_tracker.TaskIsNotReadyToStartError
     _ = pm.patterns.status_tracker.TaskLockedError
+    _ = pm.patterns.status_tracker.TaskAlreadySucceedError
     _ = pm.patterns.status_tracker.TaskIgnoredError
-    _ = pm.patterns.status_tracker.BaseData
-    _ = pm.patterns.status_tracker.BaseErrors
-    _ = pm.patterns.status_tracker.BaseStatusTracker
+    _ = pm.patterns.status_tracker.StatusNameEnum
+    _ = pm.patterns.status_tracker.BaseStatusEnum
+    _ = pm.patterns.status_tracker.TrackerConfig
+    _ = pm.patterns.status_tracker.StatusAndUpdateTimeIndex
+    _ = pm.patterns.status_tracker.BaseTask
+    _ = pm.patterns.status_tracker.ExecutionContext
 
 
 if __name__ == "__main__":

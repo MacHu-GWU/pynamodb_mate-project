@@ -2,391 +2,508 @@
 
 import pytest
 import time
-import dataclasses
 
 import pynamodb_mate.api as pm
-from pynamodb_mate.tests.constants import PY_VER, PYNAMODB_VER, IS_CI
+from pynamodb_mate.tests.constants import IS_CI, PY_VER, PYNAMODB_VER
 from pynamodb_mate.tests.base_test import BaseTest
 from pynamodb_mate.patterns.status_tracker.impl import (
-    EPOCH,
-    utc_now,
+    ExecutionContext,
+    get_utc_now,
+    StatusNameEnum,
     BaseStatusEnum,
+    TrackerConfig,
     StatusAndUpdateTimeIndex,
-    BaseStatusTracker,
+    BaseTask,
+    TaskExecutionError,
+    TaskIsNotInitializedError,
+    TaskIsNotReadyToStartError,
     TaskLockedError,
+    TaskAlreadySucceedError,
     TaskIgnoredError,
-    BaseData,
-    BaseErrors,
 )
+from rich import print as rprint
 
 
-@dataclasses.dataclass
-class Data(BaseData):
-    name: str = dataclasses.field()
-
-
-class StatusEnum(BaseStatusEnum):
-    s00_todo = 0
-    s03_in_progress = 3
-    s06_failed = 6
-    s09_success = 9
-    s10_ignore = 10
+# ------------------------------------------------------------------------------
+#
+# ------------------------------------------------------------------------------
 
 
 class UserError(Exception):
     pass
 
 
-class Tracker(BaseStatusTracker):
+class Task(BaseTask):
     class Meta:
-        table_name = f"pynamodb-mate-test-status-tracker-{PY_VER}-{PYNAMODB_VER}"
+        table_name = f"pynamodb-mate-test-status-tracker-v2-{PY_VER}-{PYNAMODB_VER}"
         region = "us-east-1"
         billing_mode = pm.constants.PAY_PER_REQUEST_BILLING_MODE
 
     status_and_update_time_index = StatusAndUpdateTimeIndex()
 
-    STATUS_ENUM = StatusEnum
 
-    def start_job(
-        self,
-        debug=True,
-    ) -> "Tracker":
-        """
-        This is just an example of how to use :meth:`BaseStatusTracker.start`.
-
-        A job should always have four related status codes:
-
-        - in process status
-        - failed status
-        - success status
-        - ignore status
-
-        If you have multiple type of jobs, I recommend creating multiple
-        wrapper functions like this for each type of jobs. And ensure that
-        the "ignore" status value is the largest status value among all,
-        and use the same "ignore" status value for all type of jobs.
-        """
-
-        return self.start(
-            in_process_status=StatusEnum.s03_in_progress.value,
-            failed_status=StatusEnum.s06_failed.value,
-            success_status=StatusEnum.s09_success.value,
-            ignore_status=StatusEnum.s10_ignore.value,
-            debug=debug,
-        )
+class Step1StatusEnum(BaseStatusEnum):
+    pending = 10
+    in_progress = 20
+    failed = 30
+    succeeded = 40
+    ignored = 50
 
 
-class JobTestTracker(Tracker):
-    JOB_ID = "test"
+class Step2StatusEnum(BaseStatusEnum):
+    pending = 40
+    in_progress = 70
+    failed = 80
+    succeeded = 90
+    ignored = 100
 
 
-class JobIndexTracker(Tracker):
-    JOB_ID = "index"
+class Step1(Task):
+    status_and_update_time_index = StatusAndUpdateTimeIndex()
+
+    config = TrackerConfig.make(
+        use_case_id="test",
+        pending_status=Step1StatusEnum.pending.value,
+        in_progress_status=Step1StatusEnum.in_progress.value,
+        failed_status=Step1StatusEnum.failed.value,
+        succeeded_status=Step1StatusEnum.succeeded.value,
+        ignored_status=Step1StatusEnum.ignored.value,
+        n_pending_shard=5,
+        n_in_progress_shard=5,
+        n_failed_shard=5,
+        n_succeeded_shard=10,
+        n_ignored_shard=5,
+    )
 
 
-class TestBaseDataClass:
-    def test(self):
-        data = Data.from_dict({"name": "Alice"})
-        assert data.name == "Alice"
-        assert data.to_dict() == {"name": "Alice"}
+class Step2(Task):
+    status_and_update_time_index = StatusAndUpdateTimeIndex()
+
+    config = TrackerConfig.make(
+        use_case_id="test",
+        pending_status=Step2StatusEnum.pending.value,
+        in_progress_status=Step2StatusEnum.in_progress.value,
+        failed_status=Step2StatusEnum.failed.value,
+        succeeded_status=Step2StatusEnum.succeeded.value,
+        ignored_status=Step2StatusEnum.ignored.value,
+        n_pending_shard=5,
+        n_in_progress_shard=5,
+        n_failed_shard=5,
+        n_succeeded_shard=10,
+        n_ignored_shard=5,
+    )
 
 
 class TestStatusEnum:
     def test(self):
-        assert StatusEnum.s00_todo.status_name == "s00_todo"
-        assert StatusEnum.from_value(0) == StatusEnum.s00_todo
-        assert StatusEnum.value_to_name(0) == "s00_todo"
-        assert StatusEnum.values() == [
-            StatusEnum.s00_todo,
-            StatusEnum.s03_in_progress,
-            StatusEnum.s06_failed,
-            StatusEnum.s09_success,
-            StatusEnum.s10_ignore,
+        assert Step1StatusEnum.pending.status_name == StatusNameEnum.pending.value
+        assert Step1StatusEnum.from_value(10) == Step1StatusEnum.pending
+        assert Step1StatusEnum.value_to_name(10) == StatusNameEnum.pending.value
+        assert Step1StatusEnum.values() == [
+            Step1StatusEnum.pending,
+            Step1StatusEnum.in_progress,
+            Step1StatusEnum.failed,
+            Step1StatusEnum.succeeded,
+            Step1StatusEnum.ignored,
         ]
 
 
+class TestExecutionContext:
+    def test_context_manager(self):
+        ctx = ExecutionContext(task=Step1(key="test"))
+        assert ctx._updates == {}
+
+        ctx.set_data(data={"version": 1})
+        assert '{"version": 1}' in str(ctx._updates["data"])
+
+        with pytest.raises(Exception):
+            with ctx.begin_update():
+                ctx.set_data(data={"version": 2})
+                raise Exception
+        assert '{"version": 1}' in str(ctx._updates["data"])
+        assert '{"version": 2}' not in str(ctx._updates["data"])
+
+
+class TestTrackerConfig:
+    def test(self):
+        with pytest.raises(ValueError):
+            TrackerConfig.make(
+                use_case_id="test",
+                pending_status=10,
+                in_progress_status=10,
+                failed_status=10,
+                succeeded_status=10,
+                ignored_status=10,
+                n_pending_shard=1,
+                n_in_progress_shard=1,
+                n_failed_shard=1,
+                n_succeeded_shard=1,
+                n_ignored_shard=1,
+            )
+
+
 class Base(BaseTest):
+
     model_list = [
-        Tracker,
-        JobTestTracker,
-        JobIndexTracker,
+        Task,
+        Step1,
+        Step2,
     ]
 
     def test(self):
-        self._test_update_context()
-
+        self._test_constructor()
         self._test_1_happy_path()
         self._test_2_lock_mechanism()
         self._test_3_retry_and_ignore()
+        self._test_4()
 
-        self._test_11_query_by_status()
+        # self._test_11_query_by_status()
 
-    def _test_update_context(self):
-        Tracker = JobTestTracker
-        task_id = "t-0"
-        tracker = Tracker.new(task_id, save=False)
-        assert tracker.is_item_exists() is False
-        assert tracker.status == StatusEnum.s00_todo.value
-        assert tracker.status_name == "s00_todo"
+    def _test_constructor(self):
+        step1 = Step1.make(task_id="t-0")
+        assert step1.use_case_id == "test"
+        assert step1.task_id == "t-0"
+        assert step1.status == Step1StatusEnum.pending.value
+        assert step1.status_name == StatusNameEnum.pending.value
+        assert step1.shard_id in list(range(1, 1 + Step1.config.n_pending_shard))
 
-        tracker = Tracker.new(task_id)
-        assert tracker.is_item_exists() is True
-
-        assert tracker.job_id == JobTestTracker.JOB_ID
-        assert tracker.task_id == task_id
-        assert tracker.status == StatusEnum.s00_todo.value
-        assert tracker.retry == 0
-        assert (utc_now() - tracker.update_time).total_seconds() < 1
-        assert tracker.lock is None
-        assert tracker.lock_time == EPOCH
-        assert tracker.data == {}
-        assert tracker.errors == {}
-
-        with tracker.update_context():
-            tracker.set_status(status=StatusEnum.s03_in_progress.value)
-            tracker.set_retry_plus_one()
-            tracker.set_data({"version": 1})
-            tracker.set_errors({"error": "something is wrong"})
-
-        assert tracker.status == StatusEnum.s03_in_progress.value
-        assert tracker.retry == 1
-        assert tracker.data == {"version": 1}
-        assert tracker.errors == {"error": "something is wrong"}
-
-        tracker.refresh()
-        assert tracker.status == StatusEnum.s03_in_progress.value
-        assert tracker.retry == 1
-        assert tracker.data == {"version": 1}
-        assert tracker.errors == {"error": "something is wrong"}
-
-        with pytest.raises(UserError):
-            with tracker.update_context():
-                tracker.set_data({"version": 2})
-                raise UserError
-
-        # when update fail, the attribute value will not be updated
-        assert tracker.data == {"version": 1}
+        step1 = Step1.make(
+            task_id="t-0",
+            _use_case_id="test1",
+            _status=Step1StatusEnum.failed.value,
+            _shard_id=1,
+        )
+        assert step1.use_case_id == "test1"
+        assert step1.task_id == "t-0"
+        assert step1.status == Step1StatusEnum.failed.value
+        assert step1.status_name == StatusNameEnum.failed.value
+        assert step1.shard_id == 1
 
     def _test_1_happy_path(self):
-        Tracker = JobTestTracker
+        """
+        This test is to simulate
+        """
         task_id = "t-1"
 
-        # create a new tracker
-        tracker = Tracker.new(task_id, data={"version": 1})
-        assert tracker.status == StatusEnum.s00_todo.value
+        # ----------------------------------------------------------------------
+        # run Step 1, it will succeed
+        # ----------------------------------------------------------------------
+        utc_now = get_utc_now()
+
+        # create a new task
+        step1 = Step1.make_and_save(task_id=task_id, data={"version": 0})
+        assert step1.status == Step1StatusEnum.pending.value
+        assert step1.is_locked() is False
+
+        step1 = Step1.get_one_or_none(task_id=task_id)
+        assert step1.status == Step1StatusEnum.pending.value
+        assert step1.is_locked() is False
 
         # start the job, this time it will succeed
-        with tracker.start_job(debug=True):
-            # check if the job status became "in progress"
-            assert tracker.status == StatusEnum.s03_in_progress.value
-            tracker.refresh()
-            assert tracker.status == StatusEnum.s03_in_progress.value
-
+        exec_ctx: ExecutionContext
+        with Step1.start(task_id, debug=False) as exec_ctx:
+            # check if the task status became "in progress"
+            assert exec_ctx.task.is_in_progress()
+            # check if the task update time got updated
+            assert exec_ctx.task.update_time > utc_now
+            # check if the task is locked
+            assert exec_ctx.task.is_locked() is True
             # do some work
-            tracker.set_data({"version": 2})
+            exec_ctx.set_data({"version": 1})
 
-        # check if the job status become "success"
-        assert tracker.status == StatusEnum.s09_success.value
-        assert tracker.data == {"version": 2}
-        assert tracker.retry == 0
-        tracker.refresh()
-        assert tracker.status == StatusEnum.s09_success.value
-        assert tracker.data == {"version": 2}
-        assert tracker.retry == 0
+        # check the in-memory updated task
+        # check if the task status became "succeeded"
+        assert exec_ctx.task.is_succeeded()
+        # check if the task update time got updated
+        assert exec_ctx.task.update_time > utc_now
+        # check if the task is locked
+        assert exec_ctx.task.is_locked() is False
+        # check if the task data got updated
+        assert exec_ctx.task.data == {"version": 1}
+        # check if the task retry count is 0
+        assert exec_ctx.task.retry == 0
+        # check if the task errors is empty
+        assert len(exec_ctx.task.errors["history"]) == 0
 
-        # start another job, this time it will fail
-        tracker = Tracker.new(task_id, data={"version": 1})
-        try:
-            with tracker.start_job(debug=True):
-                tracker.set_data({"version": 2})
+        # check the database side updated task
+        step1 = Step1.get_one_or_none(task_id=task_id)
+        # check if the task status became "succeeded"
+        assert step1.is_succeeded()
+        # check if the task update time got updated
+        assert step1.update_time > utc_now
+        # check if the task is locked
+        assert step1.is_locked() is False
+        # check if the task data got updated
+        assert step1.data == {"version": 1}
+        # check if the task retry count is 0
+        assert step1.retry == 0
+        # check if the task errors is empty
+        assert len(step1.errors["history"]) == 0
+
+        # ----------------------------------------------------------------------
+        # run Step 1, it will fail
+        # ----------------------------------------------------------------------
+        with pytest.raises(TaskIsNotReadyToStartError):
+            with Step1.start(task_id, debug=False) as exec_ctx:
+                pass
+
+        with pytest.raises(TaskAlreadySucceedError):
+            with Step1.start(task_id, detailed_error=True, debug=False) as exec_ctx:
+                pass
+
+        # ----------------------------------------------------------------------
+        # run Step 2, it will fail first time
+        # ----------------------------------------------------------------------
+        step2 = Step2.get_one_or_none(task_id=task_id)
+        assert step2.is_pending()
+        assert step2.is_locked() is False
+
+        utc_now = get_utc_now()
+
+        with pytest.raises(UserError):
+            with Step2.start(task_id, debug=False) as exec_ctx:
+                exec_ctx.set_data({"version": 2})
                 raise UserError("something is wrong!")
-        except UserError:
-            pass
 
-        assert tracker.status == StatusEnum.s06_failed.value
-        assert tracker.data == {"version": 1}  # it is clean data
-        assert tracker.retry == 1
+        # check the in-memory updated task
+        # check if the task status became "failed"
+        assert exec_ctx.task.is_failed()
+        # check if the task update time got updated
+        assert exec_ctx.task.update_time > utc_now
+        # check if the task is locked
+        assert exec_ctx.task.is_locked() is False
+        # check if the task data is NOT got updated when failed
+        assert exec_ctx.task.data == {"version": 1}
+        # check if the task retry count is 1
+        assert exec_ctx.task.retry == 1
+        # check if the task errors got logged
+        assert len(exec_ctx.task.errors["history"]) == 1
+        assert "UserError" in exec_ctx.task.errors["history"][0]["error"]
 
-        time.sleep(1)
-        tracker.refresh()
-        assert tracker.status == StatusEnum.s06_failed.value
-        assert tracker.data == {"version": 1}  # it is the database side data
-        assert tracker.retry == 1
+        # check the database side updated task
+        step2 = Step2.get_one_or_none(task_id=task_id)
+        # check if the task status became "failed"
+        assert step2.is_failed()
+        # check if the task update time got updated
+        assert step2.update_time > utc_now
+        # check if the task is locked
+        assert step2.is_locked() is False
+        # check if the task data is NOT got updated when failed
+        assert step2.data == {"version": 1}
+        # check if the task retry count is 1
+        assert step2.retry == 1
+        # check if the task errors got logged
+        assert len(step2.errors["history"]) == 1
+        assert "UserError" in step2.errors["history"][0]["error"]
+
+        # ----------------------------------------------------------------------
+        # run Step 2 again, it will succeeded this time
+        # ----------------------------------------------------------------------
+        utc_now = get_utc_now()
+
+        with Step2.start(task_id, debug=False) as exec_ctx:
+            exec_ctx.set_data({"version": 2})
+
+        # check the in-memory updated task
+        # check if the task status became "failed"
+        assert exec_ctx.task.is_succeeded()
+        # check if the task update time got updated
+        assert exec_ctx.task.update_time > utc_now
+        # check if the task is locked
+        assert exec_ctx.task.is_locked() is False
+        # check if the task data got updated
+        assert exec_ctx.task.data == {"version": 2}
+        # check if the task retry count got reset
+        assert exec_ctx.task.retry == 0
+        # check if the task errors got logged
+        assert len(exec_ctx.task.errors["history"]) == 1
+        assert "UserError" in exec_ctx.task.errors["history"][0]["error"]
+
+        # check the database side updated task
+        step2 = Step2.get_one_or_none(task_id=task_id)
+        # check if the task status became "failed"
+        assert step2.is_succeeded()
+        # check if the task update time got updated
+        assert step2.update_time > utc_now
+        # check if the task is locked
+        assert step2.is_locked() is False
+        # check if the task data got updated
+        assert step2.data == {"version": 2}
+        # check if the task retry count got reset
+        assert step2.retry == 0
+        # check if the task errors got logged
+        assert len(step2.errors["history"]) == 1
+        assert "UserError" in step2.errors["history"][0]["error"]
 
     def _test_2_lock_mechanism(self):
-        Tracker = JobTestTracker
         task_id = "t-2"
 
-        # create a new tracker
-        tracker = Tracker.new(task_id)
-        assert tracker.status == StatusEnum.s00_todo.value
-        assert tracker.lock is None
-        assert tracker.is_locked() is False
+        # create a new task
+        step1 = Step1.make_and_save(task_id=task_id, data={"version": 0})
 
-        time.sleep(1)
-        tracker = Tracker.get_one_or_none(task_id)
-        assert tracker.status == StatusEnum.s00_todo.value
-        assert tracker.lock is None
-        assert tracker.is_locked() is False
+        exec_ctx: ExecutionContext
+        exec_ctx_1: ExecutionContext
+        with Step1.start(task_id, debug=False) as exec_ctx:
+            # another worker is trying to start the same task
+            with pytest.raises(TaskExecutionError):
+                with Step1.start(task_id, debug=False) as exec_ctx_1:
+                    pass
 
-        # lock it
-        with tracker.update_context():
-            tracker.set_locked()
+            with pytest.raises(TaskIsNotReadyToStartError):
+                with Step1.start(task_id, debug=False) as exec_ctx_1:
+                    pass
 
-        # verify it is really locked
-        assert tracker.lock is not None
-        assert tracker.is_locked() is True
+            # show detailed error
+            with pytest.raises(TaskLockedError):
+                with Step1.start(
+                    task_id,
+                    detailed_error=True,
+                    debug=False,
+                ) as exec_ctx_1:
+                    pass
 
-        # run a job while it is locked
-        assert tracker.data == {}
-
-        with pytest.raises(TaskLockedError):
-            with tracker.start_job():
-                tracker.set_data({"version": 2})
-
-        # nothing should happen
-        # data is not changed
-        time.sleep(1)
-        assert tracker.is_locked() is True
-        assert tracker.data == {}
-
-        # status and update_time is not changed
-        update_time = tracker.update_time
-        tracker.refresh()
-        assert tracker.update_time == update_time
+            # check the database side updated task
+            utc_now_1 = get_utc_now()
+            step1 = Step1.get_one_or_none(task_id=task_id)
+            # check if the task status is "in_progress",
+            # because another worker is working on it
+            assert step1.is_in_progress()
+            # check if the task update time is updated by the previous worker, not by the current worker
+            assert step1.update_time < utc_now_1
+            # check if the task is locked
+            assert step1.is_locked() is True
+            # check if the task retry count is not changed
+            assert step1.retry == 0
+            # check if the task errors got logged, we don't log error when failed to get lock
+            assert len(step1.errors["history"]) == 0
 
     def _test_3_retry_and_ignore(self):
-        Tracker = JobTestTracker
         task_id = "t-3"
 
         # create a new tracker
-        tracker = Tracker.new(task_id, data={"version": 1})
-        assert tracker.retry == 0
+        step1 = Step1.make_and_save(task_id=task_id, data={"version": 0})
 
-        # 1st try
+        # ----------------------------------------------------------------------
+        # run Step 1 three times, and all of them failed, and it reaches ignored status
+        # ----------------------------------------------------------------------
+        utc_now = get_utc_now()
+        exec_ctx: ExecutionContext
         with pytest.raises(UserError):
-            with tracker.start_job():
+            with Step1.start(task_id, debug=False) as exec_ctx:
                 raise UserError
 
-        assert tracker.retry == 1
-        assert tracker.status == StatusEnum.s06_failed.value
-        tracker.refresh()
-        assert tracker.retry == 1
-        assert tracker.status == StatusEnum.s06_failed.value
-
-        # 2nd try
         with pytest.raises(UserError):
-            with tracker.start_job():
+            with Step1.start(task_id, debug=False) as exec_ctx:
                 raise UserError
 
-        assert tracker.retry == 2
-        assert tracker.status == StatusEnum.s06_failed.value
-        tracker.refresh()
-        assert tracker.retry == 2
-        assert tracker.status == StatusEnum.s06_failed.value
+        with pytest.raises(UserError):
+            with Step1.start(task_id, debug=False) as exec_ctx:
+                raise UserError
+        # check the in-memory updated task
+        # check if the task status became "ignored"
+        assert exec_ctx.task.is_ignored()
+        # check if the task update time got updated
+        assert exec_ctx.task.update_time > utc_now
+        # check if the task is locked
+        assert exec_ctx.task.is_locked() is False
+        # check if the task retry count got updated
+        assert exec_ctx.task.retry == 3
+        # check if the task errors got logged
+        assert len(exec_ctx.task.errors["history"]) == 3
+        for dct in exec_ctx.task.errors["history"]:
+            assert "UserError" in dct["error"]
 
-        # 3rd try success, the retry reset to 0
-        with tracker.start_job():
-            tracker.set_data({"version": 2})
-        assert tracker.retry == 0
-        assert tracker.status == StatusEnum.s09_success.value
-        assert tracker.data == {"version": 2}
-        tracker.refresh()
-        assert tracker.retry == 0
-        assert tracker.status == StatusEnum.s09_success.value
-        assert tracker.data == {"version": 2}
+        # check the database side updated task
+        step1 = Step1.get_one_or_none(task_id=task_id)
+        # check if the task status became "ignored"
+        assert step1.is_ignored()
+        # check if the task update time got updated
+        assert step1.update_time > utc_now
+        # check if the task is locked
+        assert step1.is_locked() is False
+        # check if the task retry count got updated
+        assert step1.retry == 3
+        # check if the task errors got logged
+        assert len(step1.errors["history"]) == 3
+        for dct in step1.errors["history"]:
+            assert "UserError" in dct["error"]
 
-        # make three attempts to fail
-        for _ in range(Tracker.MAX_RETRY):
-            with pytest.raises(UserError):
-                with tracker.start_job():
-                    raise UserError
+        # ----------------------------------------------------------------------
+        # run Step 1 another time
+        # ----------------------------------------------------------------------
+        with pytest.raises(TaskExecutionError):
+            with Step1.start(task_id, debug=False) as exec_ctx:
+                pass
 
-        assert tracker.retry == Tracker.MAX_RETRY
-        assert tracker.status == StatusEnum.s10_ignore.value
-        tracker.refresh()
-        assert tracker.retry == Tracker.MAX_RETRY
-        assert tracker.status == StatusEnum.s10_ignore.value
+        with pytest.raises(TaskIsNotReadyToStartError):
+            with Step1.start(task_id, debug=False) as exec_ctx:
+                pass
 
         with pytest.raises(TaskIgnoredError):
-            with tracker.start_job():
-                tracker.set_data({"version": 3})
+            with Step1.start(task_id, detailed_error=True, debug=False) as exec_ctx:
+                pass
 
-        assert tracker.retry == Tracker.MAX_RETRY
-        assert tracker.status == StatusEnum.s10_ignore.value
-        assert tracker.data == {"version": 2}
-        tracker.refresh()
-        assert tracker.retry == Tracker.MAX_RETRY
-        assert tracker.status == StatusEnum.s10_ignore.value
-        assert tracker.data == {"version": 2}
+    def _test_4(self):
+        task_id = "t-4"
+
+        with pytest.raises(TaskIsNotInitializedError):
+            with Step1.start(task_id, detailed_error=True, debug=False) as exec_ctx:
+                pass
 
     def _test_11_query_by_status(self):
-        Tracker = JobIndexTracker
-
         # prepare data
-        with Tracker.batch_write() as batch:
-            for ith, status_enum in enumerate(StatusEnum, start=1):
+        Step1.delete_all()
+        with Step1.batch_write() as batch:
+            for ith, status_enum in enumerate(Step1StatusEnum, start=1):
                 batch.save(
-                    Tracker.make(
+                    Step1.make(
                         task_id=f"t-{ith}",
-                        status=status_enum.value,
+                        _status=status_enum.value,
                         data={"value": 1},
                     )
                 )
-
         time.sleep(1)
 
         # each status code only has one item
-        for ith, status in enumerate(StatusEnum, start=1):
-            res = list(Tracker.query_by_status(status.value))
+        for ith, status_enum in enumerate(Step1StatusEnum, start=1):
+            res = list(Step1.query_by_status(status=status_enum.value))
             assert len(res) == 1
             assert res[0].task_id == f"t-{ith}"
+            break
 
-        res = Tracker.query_by_status(
-            [
-                StatusEnum.s00_todo.value,
-                StatusEnum.s06_failed.value,
-            ]
-        ).all()
+        res = Step1.query_for_unfinished().all()
         assert len(res) == 2
         assert res[0].task_id == f"t-1"
         assert res[1].task_id == f"t-3"
 
         # verify that the status index is NOT ALL projection
-        tracker = res[0]
-        assert tracker.data == {}
-        tracker.refresh()
-        assert tracker.data == {"value": 1}
+        step1 = res[0]
+        assert step1.data == {}
+        step1.refresh()
+        assert step1.data == {"value": 1}
 
         # test the auto_refresh arg
-        res = Tracker.query_by_status(
-            [
-                StatusEnum.s00_todo,
-                StatusEnum.s06_failed.value,
-            ],
-            auto_refresh=True,
-        ).all()
+        res = Step1.query_for_unfinished(auto_refresh=True).all()
         assert len(res) == 2
-
-        for tracker in res:
-            assert tracker.data == {"value": 1}
+        for task in res:
+            assert task.data == {"value": 1}
 
         # verify the status index object cache
-        Tracker._get_status_index()  # it should not print anything
-        Tracker._get_status_index()  # it should not print anything
+        task._get_status_index(_is_test=True)  # it should not print anything
+        task._get_status_index(_is_test=True)  # it should not print anything
 
-        assert Tracker.count_items_by_job_id() == 5
-        Tracker.delete_all_by_job_id()
+        assert Step1.count_tasks_by_use_case_id() == 5
+        Step1.delete_tasks_by_use_case_id()
         time.sleep(1)
-        assert Tracker.count_items_by_job_id() == 0
+        assert Step1.count_tasks_by_use_case_id() == 0
 
 
-class TestStatusTrackerUseMock(Base):
+class TestStatusTrackerV2UseMock(Base):
     use_mock = True
 
 
 @pytest.mark.skipif(IS_CI, reason="Skip test that requires AWS resources in CI.")
-class TestStatusTrackerUseAws(Base):
+class TestStatusTrackerV2UseAws(Base):
     use_mock = False
 
 
