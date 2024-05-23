@@ -2,9 +2,8 @@
 
 import pytest
 
-from boto_session_manager import BotoSesManager
 import pynamodb_mate.api as pm
-from pynamodb_mate.tests.constants import PY_VER, PYNAMODB_VER, AWS_PROFILE, IS_CI
+from pynamodb_mate.tests.constants import PY_VER, PYNAMODB_VER, IS_CI
 from pynamodb_mate.tests.base_test import BaseTest
 
 ENCRYPTION_KEY = "my-password"
@@ -20,22 +19,27 @@ class ArchiveModel(pm.Model):
     secret_message: pm.REQUIRED_BINARY = pm.attributes.EncryptedUnicodeAttribute(
         encryption_key=ENCRYPTION_KEY,
         determinative=True,
+        legacy_encoding=False,
     )
     secret_binary: pm.REQUIRED_BINARY = pm.attributes.EncryptedBinaryAttribute(
         encryption_key=ENCRYPTION_KEY,
         determinative=False,
+        legacy_encoding=False,
     )
     secret_integer: pm.REQUIRED_BINARY = pm.attributes.EncryptedNumberAttribute(
         encryption_key=ENCRYPTION_KEY,
         determinative=True,
+        legacy_encoding=False,
     )
     secret_float: pm.REQUIRED_BINARY = pm.attributes.EncryptedNumberAttribute(
         encryption_key=ENCRYPTION_KEY,
         determinative=False,
+        legacy_encoding=False,
     )
     secret_data: pm.REQUIRED_BINARY = pm.attributes.EncryptedJsonDictAttribute(
         encryption_key=ENCRYPTION_KEY,
         determinative=False,
+        legacy_encoding=False,
     )
 
 

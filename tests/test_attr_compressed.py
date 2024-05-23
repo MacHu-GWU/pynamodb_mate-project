@@ -17,11 +17,11 @@ class OrderModel(pm.Model):
     # fmt: off
     order_id: pm.REQUIRED_STR = pm.UnicodeAttribute(hash_key=True)
     # original value is unicode str
-    description: pm.OPTIONAL_BINARY = pm.attributes.CompressedUnicodeAttribute(null=True)
+    description: pm.OPTIONAL_BINARY = pm.attributes.CompressedUnicodeAttribute(null=True, legacy_encoding=False)
     # original value is binary bytes
-    image: pm.OPTIONAL_BINARY = pm.attributes.CompressedBinaryAttribute(null=True)
+    image: pm.OPTIONAL_BINARY = pm.attributes.CompressedBinaryAttribute(null=True, legacy_encoding=False)
     # original value is any json serializable object
-    items: pm.OPTIONAL_BINARY = pm.attributes.CompressedJSONDictAttribute(null=True)
+    items: pm.OPTIONAL_BINARY = pm.attributes.CompressedJSONDictAttribute(null=True, legacy_encoding=False)
     # fmt: on
 
 

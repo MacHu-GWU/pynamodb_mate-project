@@ -73,7 +73,7 @@ class DynamoDBBackend(
             Meta = Meta_
 
             key: str = UnicodeAttribute(hash_key=True)
-            value: bytes = BinaryAttribute()
+            value: bytes = BinaryAttribute(legacy_encoding=False)
             expire: int = NumberAttribute()
             update_ts: int = NumberAttribute()
 

@@ -137,9 +137,9 @@ class TestS3BackedAttributeUseMock(Base):
     use_mock = True
 
 
-# @pytest.mark.skipif(IS_CI, reason="Skip test that requires AWS resources in CI.")
-# class TestS3BackedAttributeUseAws(Base):
-#     use_mock = False
+@pytest.mark.skipif(IS_CI, reason="Skip test that requires AWS resources in CI.")
+class TestS3BackedAttributeUseAws(Base):
+    use_mock = False
 
 
 if __name__ == "__main__":

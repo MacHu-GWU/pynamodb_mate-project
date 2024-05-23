@@ -25,7 +25,6 @@ from pynamodb.indexes import (
     GlobalSecondaryIndex,
     IncludeProjection,
 )
-from pynamodb.settings import OperationSettings
 
 from ...models import Model
 from ...compat import cached_property
@@ -327,7 +326,6 @@ class BaseStatusTracker(Model):
         task_id: str,
         consistent_read: bool = False,
         attributes_to_get: T.Optional[T.Sequence[str]] = None,
-        settings: OperationSettings = OperationSettings.default,
         job_id: T.Optional[str] = None,
     ) -> T.Optional["BaseStatusTracker"]:
         """
@@ -338,7 +336,6 @@ class BaseStatusTracker(Model):
             hash_key=cls.make_key(task_id, JOB_ID),
             consistent_read=consistent_read,
             attributes_to_get=attributes_to_get,
-            settings=settings,
         )
 
     def is_item_exists(self) -> bool:
