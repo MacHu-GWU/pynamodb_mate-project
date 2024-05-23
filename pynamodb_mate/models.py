@@ -11,7 +11,6 @@ from iterproxy import IterProxy
 
 from pynamodb.models import Model as PynamodbModel
 from pynamodb.indexes import GlobalSecondaryIndex, LocalSecondaryIndex
-from pynamodb.settings import OperationSettings
 from pynamodb.exceptions import DeleteError
 from pynamodb.expressions.condition import Condition
 
@@ -132,7 +131,6 @@ class Model(PynamodbModel):
         range_key: T.Optional[T.Any] = None,
         consistent_read: bool = False,
         attributes_to_get: T.Optional[T.Sequence[str]] = None,
-        settings: OperationSettings = OperationSettings.default,
     ) -> T.Optional["Model"]:
         """
         Get one Dynamodb item object or None if not exists.
@@ -145,7 +143,6 @@ class Model(PynamodbModel):
                 range_key=range_key,
                 consistent_read=consistent_read,
                 attributes_to_get=attributes_to_get,
-                settings=settings,
             )
         except cls.DoesNotExist:
             return None
@@ -240,7 +237,6 @@ class Model(PynamodbModel):
         index_name: T.Optional[str] = None,
         rate_limit: T.Optional[float] = None,
         attributes_to_get: T.Optional[T.Sequence[str]] = None,
-        settings: OperationSettings = OperationSettings.default,
     ) -> IterProxy[_T]:
         """
         Similar to the ``Model.scan()`` method, but it returns
@@ -260,7 +256,6 @@ class Model(PynamodbModel):
                 index_name=index_name,
                 rate_limit=rate_limit,
                 attributes_to_get=attributes_to_get,
-                settings=settings,
             )
         )
 
@@ -278,7 +273,6 @@ class Model(PynamodbModel):
         attributes_to_get: T.Optional[T.Iterable[str]] = None,
         page_size: T.Optional[int] = None,
         rate_limit: T.Optional[float] = None,
-        settings: OperationSettings = OperationSettings.default,
     ) -> IterProxy[_T]:
         """
         Similar to the ``Model.query()`` method, but it returns
@@ -299,7 +293,6 @@ class Model(PynamodbModel):
                 attributes_to_get=attributes_to_get,
                 page_size=page_size,
                 rate_limit=rate_limit,
-                settings=settings,
             )
         )
 

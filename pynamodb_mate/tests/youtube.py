@@ -36,6 +36,12 @@ class Entity(rl.BaseEntity):
 
 
 class User(Entity):
+
+    class Meta:
+        table_name = f"pynamodb-mate-test-youtube-entity-{PY_VER}-{PYNAMODB_VER}"
+        region = "us-east-1"
+        billing_mode = pm.constants.PAY_PER_REQUEST_BILLING_MODE
+
     lookup_index = LookupIndex()
 
     @property
@@ -44,6 +50,12 @@ class User(Entity):
 
 
 class Video(Entity):
+
+    class Meta:
+        table_name = f"pynamodb-mate-test-youtube-entity-{PY_VER}-{PYNAMODB_VER}"
+        region = "us-east-1"
+        billing_mode = pm.constants.PAY_PER_REQUEST_BILLING_MODE
+
     lookup_index = LookupIndex()
 
     @property
@@ -52,6 +64,12 @@ class Video(Entity):
 
 
 class Channel(Entity):
+
+    class Meta:
+        table_name = f"pynamodb-mate-test-youtube-entity-{PY_VER}-{PYNAMODB_VER}"
+        region = "us-east-1"
+        billing_mode = pm.constants.PAY_PER_REQUEST_BILLING_MODE
+
     lookup_index = LookupIndex()
 
     @property
@@ -60,6 +78,12 @@ class Channel(Entity):
 
 
 class Playlist(Entity):
+
+    class Meta:
+        table_name = f"pynamodb-mate-test-youtube-entity-{PY_VER}-{PYNAMODB_VER}"
+        region = "us-east-1"
+        billing_mode = pm.constants.PAY_PER_REQUEST_BILLING_MODE
+
     lookup_index = LookupIndex()
 
     @property
@@ -68,6 +92,12 @@ class Playlist(Entity):
 
 
 class VideoOwnership(Entity):
+
+    class Meta:
+        table_name = f"pynamodb-mate-test-youtube-entity-{PY_VER}-{PYNAMODB_VER}"
+        region = "us-east-1"
+        billing_mode = pm.constants.PAY_PER_REQUEST_BILLING_MODE
+
     lookup_index = LookupIndex()
 
     @property
@@ -80,6 +110,12 @@ class VideoOwnership(Entity):
 
 
 class ChannelOwnership(Entity):
+
+    class Meta:
+        table_name = f"pynamodb-mate-test-youtube-entity-{PY_VER}-{PYNAMODB_VER}"
+        region = "us-east-1"
+        billing_mode = pm.constants.PAY_PER_REQUEST_BILLING_MODE
+
     lookup_index = LookupIndex()
 
     @property
@@ -92,6 +128,12 @@ class ChannelOwnership(Entity):
 
 
 class PlaylistOwnership(Entity):
+
+    class Meta:
+        table_name = f"pynamodb-mate-test-youtube-entity-{PY_VER}-{PYNAMODB_VER}"
+        region = "us-east-1"
+        billing_mode = pm.constants.PAY_PER_REQUEST_BILLING_MODE
+
     lookup_index = LookupIndex()
 
     @property
@@ -104,6 +146,12 @@ class PlaylistOwnership(Entity):
 
 
 class VideoChannelAssociation(Entity):
+
+    class Meta:
+        table_name = f"pynamodb-mate-test-youtube-entity-{PY_VER}-{PYNAMODB_VER}"
+        region = "us-east-1"
+        billing_mode = pm.constants.PAY_PER_REQUEST_BILLING_MODE
+
     lookup_index = LookupIndex()
 
     @property
@@ -116,6 +164,12 @@ class VideoChannelAssociation(Entity):
 
 
 class VideoPlaylistAssociation(Entity):
+
+    class Meta:
+        table_name = f"pynamodb-mate-test-youtube-entity-{PY_VER}-{PYNAMODB_VER}"
+        region = "us-east-1"
+        billing_mode = pm.constants.PAY_PER_REQUEST_BILLING_MODE
+
     lookup_index = LookupIndex()
 
     @property
@@ -128,6 +182,12 @@ class VideoPlaylistAssociation(Entity):
 
 
 class ViewerSubscribeYoutuber(Entity):
+
+    class Meta:
+        table_name = f"pynamodb-mate-test-youtube-entity-{PY_VER}-{PYNAMODB_VER}"
+        region = "us-east-1"
+        billing_mode = pm.constants.PAY_PER_REQUEST_BILLING_MODE
+
     lookup_index = LookupIndex()
 
     @property
@@ -140,6 +200,12 @@ class ViewerSubscribeYoutuber(Entity):
 
 
 class ViewerSubscribeChannel(Entity):
+
+    class Meta:
+        table_name = f"pynamodb-mate-test-youtube-entity-{PY_VER}-{PYNAMODB_VER}"
+        region = "us-east-1"
+        billing_mode = pm.constants.PAY_PER_REQUEST_BILLING_MODE
+
     lookup_index = LookupIndex()
 
     @property
@@ -367,6 +433,20 @@ class RelationshipSetting(rl.RelationshipSetting):
         return self.find_many_by_one(
             one_to_many_r_type=video_ownership_relationship_type,
             one_entity_id=user_id,
+        )
+
+    def find_owner_of_a_video(
+        self,
+        video_id: str,
+    ) -> User:
+        return User.get(
+            hash_key=self.find_one_by_many(
+                one_to_many_r_type=video_ownership_relationship_type,
+                many_entity_id=video_id,
+            )
+            .one_or_none()
+            .sk_id,
+            range_key=f"{user_entity_type.name}_{rl.ROOT}",
         )
 
     def find_channels_created_by_a_user(

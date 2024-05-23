@@ -42,7 +42,7 @@ class DynamoDBBackend(
     def __init__(
         self,
         table_name: str,
-        region: T.Optional[str] = None,
+        region: str,
         billing_mode: T.Optional[str] = PAY_PER_REQUEST_BILLING_MODE,
         write_capacity_units: T.Optional[int] = None,
         read_capacity_units: T.Optional[int] = None,
@@ -50,9 +50,8 @@ class DynamoDBBackend(
     ):
         meta_kwargs = dict(
             table_name=table_name,
+            region=region,
         )
-        if region:  # pragma: no cover
-            meta_kwargs["region"] = region
         if billing_mode:
             meta_kwargs["billing_mode"] = billing_mode
         if write_capacity_units:  # pragma: no cover
@@ -73,7 +72,7 @@ class DynamoDBBackend(
             Meta = Meta_
 
             key: str = UnicodeAttribute(hash_key=True)
-            value: bytes = BinaryAttribute()
+            value: bytes = BinaryAttribute(legacy_encoding=False)
             expire: int = NumberAttribute()
             update_ts: int = NumberAttribute()
 

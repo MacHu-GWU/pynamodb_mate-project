@@ -30,6 +30,7 @@ class SymmetricEncryptedAttribute(BinaryAttribute):
         default: T.Optional[T.Callable] = None,
         default_for_new: T.Optional[T.Callable] = None,
         attr_name: T.Optional[str] = None,
+        legacy_encoding: bool = False,
     ):
         super().__init__(
             hash_key=hash_key,
@@ -38,6 +39,7 @@ class SymmetricEncryptedAttribute(BinaryAttribute):
             default=default,
             default_for_new=default_for_new,
             attr_name=attr_name,
+            legacy_encoding=legacy_encoding,
         )
         self.encryption_key = encryption_key
         self.determinative = determinative

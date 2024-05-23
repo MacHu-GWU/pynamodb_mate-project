@@ -11,5 +11,6 @@ sub packages and modules
     :maxdepth: 1
 
     api <api>
+    exc <exc>
     impl <impl>
     

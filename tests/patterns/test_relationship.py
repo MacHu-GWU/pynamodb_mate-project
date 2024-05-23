@@ -131,6 +131,8 @@ class Base(BaseTest):
         assert_pk(rs.find_videos_created_by_a_user("u-3"), [])
         assert_pk(rs.find_videos_created_by_a_user("u-4"), [])
 
+        assert rs.find_owner_of_a_video("v-1-1").pk_id == "u-1"
+
         assert_pk(rs.find_channels_created_by_a_user("u-1"), ["c-1-1"])
         assert_pk(rs.find_channels_created_by_a_user("u-2"), ["c-2-1", "c-2-2"])
         assert_pk(rs.find_channels_created_by_a_user("u-3"), [])

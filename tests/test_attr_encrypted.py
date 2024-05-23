@@ -2,9 +2,8 @@
 
 import pytest
 
-from boto_session_manager import BotoSesManager
 import pynamodb_mate.api as pm
-from pynamodb_mate.tests.constants import PY_VER, PYNAMODB_VER, AWS_PROFILE, IS_CI
+from pynamodb_mate.tests.constants import PY_VER, PYNAMODB_VER, IS_CI
 from pynamodb_mate.tests.base_test import BaseTest
 
 ENCRYPTION_KEY = "my-password"

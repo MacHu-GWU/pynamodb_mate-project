@@ -40,10 +40,12 @@ class TestInMemoryCache:
 class Base(BaseTest):
     json_dict_dynamodb_cache = JsonDictDynamodbCache(
         table_name=f"pynamodb-mate-test-cache-{PY_VER}-{PYNAMODB_VER}",
+        region="us-east-1",
         create=False,
     )
     json_list_dynamodb_cache = JsonListDynamodbCache(
         table_name=f"pynamodb-mate-test-cache-{PY_VER}-{PYNAMODB_VER}",
+        region="us-east-1",
         create=False,
     )
     model_list = [

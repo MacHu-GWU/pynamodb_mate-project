@@ -13,5 +13,4 @@ sub packages and modules
     api <api>
     compressed <compressed>
     encrypted <encrypted>
-    s3backed <s3backed>
     

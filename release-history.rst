@@ -8,17 +8,31 @@ Backlog
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Features and Improvements**
 
-- add automatically rollback if one of the DynamoDB write or S3 write failed.
-- add an option to delete the S3 object as well when the DynamoDB item is deleted.
-- add lazy load option for S3BackedAttribute.
 - add ``clear_expired()`` method to DynamoDB cache backend.
-- add ``large_attribute`` pattern.
 
 **Minor Improvements**
 
 **Bugfixes**
 
 **Miscellaneous**
+
+
+6.0.0.1 (2024-05-23)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**💥Breaking change**
+
+- fully support pynamodb 6.X, drop compatible to pynamodb 5.X.
+- rework the ``status_tracker`` pattern to ensure strong consistency in high concurrent workload. Due to the change that the ``Index.query`` is instance method from pynamodb 6.X, the old ``status_tracker`` implementation won't work in pynamodb 6.X. We have to completely remove the old implementation and re-implement the ``status_tracker`` pattern.
+
+**Features and Improvements**
+
+- fully support pynamodb 6.X, drop compatible to pynamodb 5.X.
+- rework the ``status_tracker`` pattern to ensure strong consistency in high concurrent workload.
+
+**Minor Improvements**
+
+- update the ``status_tracker`` document.
+- improve code coverage test.
 
 
 5.5.1.1 (2024-05-22)
