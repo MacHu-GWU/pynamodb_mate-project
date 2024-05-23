@@ -58,5 +58,5 @@ jobs:
         uses: "codecov/codecov-action@v4" # https://github.com/marketplace/actions/codecov
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          slug: MacHu-GWU/sqlalchemy_mate-project
+          slug: MacHu-GWU/pynamodb_mate-project
           fail_ci_if_error: true
