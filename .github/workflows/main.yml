@@ -57,6 +57,6 @@ jobs:
         if: "${{ contains(env.USING_COVERAGE, matrix.python-version) && github.ref == 'refs/heads/main' }}"
         uses: "codecov/codecov-action@v4" # https://github.com/marketplace/actions/codecov
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: MacHu-GWU/sqlalchemy_mate-project
           fail_ci_if_error: true
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
