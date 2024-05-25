@@ -16,6 +16,8 @@ rstobj==1.2.1
 pygments==2.15.1
 # iPython
 ipython==8.10.0
+# ipykernel
+ipykernel==6.28.0
 # automaticall generate .. toctree directives and API reference doc
 docfly==2.0.3
 # note: for furo-sphinx-search (https://github.com/harshil21/furo-sphinx-search)
