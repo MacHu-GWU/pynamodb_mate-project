@@ -27,7 +27,7 @@ class Document(pm.Model, LargeAttributeMixin):
         region = "us-east-1"
         billing_mode = pm.constants.PAY_PER_REQUEST_BILLING_MODE
 
-    pk = pm.UnicodeAttribute(hash_key=True)
+    doc_id = pm.UnicodeAttribute(hash_key=True)
     update_at = pm.UTCDateTimeAttribute()
     html = pm.UnicodeAttribute(null=True)
     image = pm.UnicodeAttribute(null=True)
@@ -74,7 +74,7 @@ class Base(BaseTest):
         )
         try:
             doc = Document(
-                pk=pk,
+                doc_id=pk,
                 update_at=utc_now,
                 data={"version": 1},
                 **put_s3_res.to_attributes(),
@@ -246,7 +246,7 @@ class Base(BaseTest):
         doc = Document.get_one_or_none(pk, sk)
         # there's a bug in serialize method on DynamicMapAttribute
         # we have to do this
-        assert new_doc.pk == doc.pk
+        assert new_doc.doc_id == doc.doc_id
         assert new_doc.update_at == doc.update_at
         assert new_doc.html == doc.html
         assert new_doc.image == doc.image
@@ -453,7 +453,7 @@ class Base(BaseTest):
         )
         # DynamoDB write operation should be succeeded
         doc = Document.get_one_or_none(pk, sk)
-        assert new_doc.pk == doc.pk
+        assert new_doc.doc_id == doc.doc_id
         assert new_doc.update_at == doc.update_at
         assert new_doc.html == doc.html
         assert new_doc.image == doc.image

@@ -17,6 +17,18 @@ Backlog
 **Miscellaneous**
 
 
+6.0.0.2 (2024-05-24)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Minor Improvements**
+
+- Add ``s3_put_object_kwargs`` parameter to :meth:`pynamodb_mate.patterns.large_attribute.impl.LargeAttributeMixin.create_large_attribute_item` and :meth:`pynamodb_mate.patterns.large_attribute.impl.LargeAttributeMixin.update_large_attribute_item`. So that user can pass additional arguments to the S3 put object requests.
+
+**Bugfixes**
+
+- Fix a bug that ``pynamodb_mate.patterns.large_attribute.impl.PutS3Response.clean_up_old_s3_object_when_update_dynamodb_item_succeeded()`` may fail when the old data model large attribute was None.
+- Fix a bug that ``pynamodb_mate.patterns.large_attribute.impl.LargeAttributeMixin.create_large_attribute_item()`` use the hard code partition key attribute by mistake.
+
+
 6.0.0.1 (2024-05-23)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **💥Breaking change**

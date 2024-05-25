@@ -173,7 +173,10 @@ class PutS3Response:
             # 必要检查新的 uri 和 旧的 uri 是否相同.
             if action.put_executed:
                 # 删除旧的 S3 object
-                s3_uri_list.append(getattr(old_model, action.attr))
+                s3_uri = getattr(old_model, action.attr)
+                # 如果之前 attr 的值是 None, 那么我们就不需要删除 S3 object
+                if s3_uri:
+                    s3_uri_list.append(s3_uri)
         batch_delete_s3_objects(s3_client, s3_uri_list)
 
     def clean_up_created_s3_object_when_update_dynamodb_item_failed(
@@ -222,6 +225,7 @@ class LargeAttributeMixin:
         bucket: str,
         prefix: str,
         update_at: datetime,
+        s3_put_object_kwargs: T.Optional[T.Dict[str, T.Dict[str, T.Any]]] = None,
     ) -> PutS3Response:
         """
         Put large attribute data to S3.
@@ -240,6 +244,11 @@ class LargeAttributeMixin:
             you can identify unused S3 objects in clean-up operation. You should
             also use this value in your data model if you have an attribute
             to show the DynamoDB item update time.
+        :param s3_put_object_kwargs: additional arguments for ``s3_client.put_object``
+            for each large attributes. for example ``{key: put_object_kwargs}``.
+            The ``key`` is the large attribute name, the ``put_object_kwargs`` is
+            a dictionary for ``s3_client.put_object`` method. For example, if you want
+            to set metadata or ContentType for the S3 object, you can use this parameter.
 
         :rtype: :class:`PutS3Response`.
         """
@@ -252,23 +261,28 @@ class LargeAttributeMixin:
                     f"The large attribute type has to be UnicodeAttribute, "
                     f"but yours: {k}: {attrs[k].attr_type}!"
                 )
+        if s3_put_object_kwargs is None:
+            s3_put_object_kwargs = dict()
         put_s3_response = PutS3Response(actions=[])
         for attr, value in kvs.items():
-            metadata = {"pk": pk}
-            if sk is not None:  # pragma: no cover
-                metadata["sk"] = sk
-            metadata["attr"] = attr
-            metadata["update_at"] = update_at.isoformat()
             s3_key = get_s3_key(pk=pk, sk=sk, attr=attr, value=value, prefix=prefix)
             s3_uri = join_s3_uri(bucket, s3_key)
             if is_s3_object_exists(s3_client, bucket=bucket, key=s3_key):
                 put_executed = False
             else:
+                put_object_kwargs = s3_put_object_kwargs.get(attr, {})
+                additional_metadata = put_object_kwargs.get("Metadata", {})
+                additional_metadata["pk"] = pk
+                if sk is not None:  # pragma: no cover
+                    additional_metadata["sk"] = sk
+                additional_metadata["attr"] = attr
+                additional_metadata["update_at"] = update_at.isoformat()
                 s3_client.put_object(
                     Bucket=bucket,
                     Key=s3_key,
                     Body=value,
-                    Metadata=metadata,
+                    Metadata=additional_metadata,
+                    **put_object_kwargs,
                 )
                 put_executed = True
             put_s3_response.actions.append(
@@ -290,7 +304,8 @@ class LargeAttributeMixin:
         bucket: str,
         prefix: str,
         update_at: datetime,
-        attributes: T.Dict[str, T.Any],
+        s3_put_object_kwargs: T.Optional[T.Dict[str, T.Dict[str, T.Any]]] = None,
+        attributes: T.Optional[T.Dict[str, T.Any]] = None,
         clean_up_when_failed: bool = True,
         _error: T.Optional[Exception] = None,
     ):
@@ -308,6 +323,11 @@ class LargeAttributeMixin:
             would be ``s3://{bucket}/{prefix}/pk={pk}/sk={sk}/attr={attr}/md5={md5}``.
         :param update_at: the update time of the DynamoDB item, it will be stored
             in the S3 object metadata as well.
+        :param s3_put_object_kwargs: additional arguments for ``s3_client.put_object``
+            for each large attributes. for example ``{key: put_object_kwargs}``.
+            The ``key`` is the large attribute name, the ``put_object_kwargs`` is
+            a dictionary for ``s3_client.put_object`` method. For example, if you want
+            to set metadata or ContentType for the S3 object, you can use this parameter.
         :param attributes: additional DynamoDB item attributes other than
             large attributes you want to set.
         :param clean_up_when_failed: if True, if S3 write succeeded
@@ -321,12 +341,16 @@ class LargeAttributeMixin:
             bucket=bucket,
             prefix=prefix,
             update_at=update_at,
+            s3_put_object_kwargs=s3_put_object_kwargs,
         )
         try:
             # this is for unit test purpose to simulate the DynamoDB operation failed
             if _error:
                 raise _error
-            kwargs = dict(pk=pk, **attributes, **put_s3_res.to_attributes())
+            kwargs = dict(**attributes, **put_s3_res.to_attributes())
+            kwargs[cls._hash_keyname] = pk
+            if cls._range_keyname:
+                kwargs[cls._range_keyname] = sk
             model = cls(**kwargs)
             model.save()
             return model
@@ -347,6 +371,7 @@ class LargeAttributeMixin:
         bucket: str,
         prefix: str,
         update_at: datetime,
+        s3_put_object_kwargs: T.Optional[T.Dict[str, T.Dict[str, T.Any]]] = None,
         update_actions: T.Optional[T.List[Action]] = None,
         consistent_read: bool = False,
         clean_up_when_succeeded: bool = True,
@@ -367,6 +392,11 @@ class LargeAttributeMixin:
             would be ``s3://{bucket}/{prefix}/pk={pk}/sk={sk}/attr={attr}/md5={md5}``.
         :param update_at: the update time of the DynamoDB item, it will be stored
             in the S3 object metadata as well.
+        :param s3_put_object_kwargs: additional arguments for ``s3_client.put_object``
+            for each large attributes. for example ``{key: put_object_kwargs}``.
+            The ``key`` is the large attribute name, the ``put_object_kwargs`` is
+            a dictionary for ``s3_client.put_object`` method. For example, if you want
+            to set metadata or ContentType for the S3 object, you can use this parameter.
         :param update_actions: additional DynamoDB item update expressions syntax
             other than large attributes you want to set. Please refer to
             https://pynamodb.readthedocs.io/en/latest/updates.html
@@ -383,6 +413,7 @@ class LargeAttributeMixin:
             bucket=bucket,
             prefix=prefix,
             update_at=update_at,
+            s3_put_object_kwargs=s3_put_object_kwargs,
         )
         got_old_model = (
             False  # IDE show warning that this line is useless, but we do need it
