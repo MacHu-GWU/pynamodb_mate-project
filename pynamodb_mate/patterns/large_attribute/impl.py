@@ -190,8 +190,6 @@ class PutS3Response:
         This method can clean up the new S3 object.
 
         :param s3_client: ``boto3.client("s3")`` object.
-        :param old_model: the old model object before updating it, we need this
-            to figure out whether the old S3 object got changed.
         """
         s3_uri_list = list()
         for action in self.actions:
