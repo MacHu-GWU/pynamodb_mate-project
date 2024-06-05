@@ -47,6 +47,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
+    'sphinx.ext.autosectionlabel',
     'sphinx_jinja',
     'sphinx_copybutton',
     'sphinx_design',
@@ -54,6 +55,8 @@ extensions = [
     'docfly.directives',
     'nbsphinx',
 ]
+
+autosectionlabel_prefix_document = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
