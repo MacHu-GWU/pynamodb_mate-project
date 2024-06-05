@@ -22,6 +22,7 @@ Backlog
 **Minor Improvements**
 
 - Add ``s3_put_object_kwargs`` parameter to :meth:`pynamodb_mate.patterns.large_attribute.impl.LargeAttributeMixin.create_large_attribute_item` and :meth:`pynamodb_mate.patterns.large_attribute.impl.LargeAttributeMixin.update_large_attribute_item`. So that user can pass additional arguments to the S3 put object requests.
+- Allow ``allowed_status`` parameter to :meth:`pynamodb_mate.patterns.status_tracker.impl.BaseStatusTracker.start`. Allow user to specify the allowed status other than "pending" / "failed".
 
 **Bugfixes**
 

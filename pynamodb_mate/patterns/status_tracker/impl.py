@@ -744,6 +744,7 @@ class BaseTask(Model):
     def start(
         cls,
         task_id: str,
+        allowed_status: T.Optional[T.List[int]] = None,
         detailed_error: bool = False,
         debug: bool = False,
     ):
@@ -781,6 +782,14 @@ class BaseTask(Model):
             )
 
         try:
+            is_valid_status = (cls.status == cls.config.pending_status) | (
+                cls.status == cls.config.failed_status
+            )
+            if allowed_status is None:
+                allowed_status = []
+            else:
+                for status in allowed_status:
+                    is_valid_status |= cls.status == status
             res = task.update(
                 actions=[
                     cls.value.set(
@@ -809,10 +818,7 @@ class BaseTask(Model):
                             )
                         )
                     )
-                    & (
-                        (cls.status == cls.config.pending_status)
-                        | (cls.status == cls.config.failed_status)
-                    )
+                    & is_valid_status
                 ),
             )
         except UpdateError as e:
@@ -855,6 +861,27 @@ class BaseTask(Model):
                         )
                         if debug:  # pragma: no cover # pragma: no cover
                             print("❌ task failed to get lock, because it is ignored.")
+                    elif task_.status not in allowed_status:
+                        if allowed_status:
+                            error = TaskIsNotReadyToStartError(
+                                f"{TaskIsNotReadyToStartError.to_task(cls.config.use_case_id, task_id)} is not ready to start, "
+                                f"the status {task_.status} is not in the allowed status {allowed_status}."
+                            )
+                            if debug:
+                                print(
+                                    f"❌ task is not ready to start, "
+                                    f"the status {task_.status} is not in the allowed status: {allowed_status}."
+                                )
+                        else:
+                            error = TaskIsNotReadyToStartError.make(
+                                use_case_id=cls.config.use_case_id,
+                                task_id=task_id,
+                            )
+                            if debug:
+                                print(
+                                    "❌ task is not ready to start yet, "
+                                    "either it is locked or status is not in 'pending' or 'failed'."
+                                )
                     else:  # pragma: no cover
                         error = NotImplementedError(
                             f"You found a bug! This error should be handled but not implemented yet, "
@@ -868,7 +895,7 @@ class BaseTask(Model):
                     if debug:  # pragma: no cover
                         print(
                             "❌ task is not ready to start yet, "
-                            "either it is locked or status is not in 'pending' or 'failed'."
+                            "either it is locked or status is not in 'pending' or 'failed' or allowed status."
                         )
             else:  # pragma: no cover
                 error = e
@@ -962,9 +989,9 @@ class BaseTask(Model):
         """
         Detect the status index object.
         """
-        if cls._status_and_update_time_index is None: # pragma: no cover
+        if cls._status_and_update_time_index is None:  # pragma: no cover
             # just for local unit test, keep it in the source code intentionally
-            if _is_test: # pragma: no cover
+            if _is_test:  # pragma: no cover
                 print("call _get_status_index() ...")
             for k, v in inspect.getmembers(cls):
                 if isinstance(v, StatusAndUpdateTimeIndex):
