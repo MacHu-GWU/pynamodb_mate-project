@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
 
+"""
+Usage example::
+
+    import pynamodb_mate.api as pm
+"""
+
 from ._version import __version__
 from pynamodb.connection import Connection
 from pynamodb.indexes import GlobalSecondaryIndex

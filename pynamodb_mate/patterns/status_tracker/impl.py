@@ -78,7 +78,7 @@ class ExecutionContext:
         as the updated task object.
         """
         # logically, this won't happen, but I add this check to make sure
-        if self.task.lock is None:
+        if self.task.lock is None:  # pragma: no cover
             raise ValueError
         res = self.task.update(
             actions=self.to_update_actions(),
@@ -299,6 +299,7 @@ class TrackerConfig:
     n_failed_shard: int = dataclasses.field()
     n_succeeded_shard: int = dataclasses.field()
     n_ignored_shard: int = dataclasses.field()
+    more_pending_status: T.List[int] = dataclasses.field()
     traceback_stack_limit: int = dataclasses.field()
     status_enum: T.Type[BaseStatusEnum] = dataclasses.field()
     status_shards: T.Dict[int, int] = dataclasses.field()
@@ -317,6 +318,7 @@ class TrackerConfig:
         n_failed_shard: int,
         n_succeeded_shard: int,
         n_ignored_shard: int,
+        more_pending_status: T.Optional[T.Union[int, T.List[int]]] = None,
         sep: str = "____",
         status_zero_pad: int = 3,
         status_shard_zero_pad: int = 3,
@@ -338,14 +340,16 @@ class TrackerConfig:
         :param ignored_status: ignored status code in integer.
         :param n_pending_shard: number of GSI shard for this status, read
             https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html
-            for more information
-        :param n_in_progress_shard: number of GSI shard for this status
-        :param n_failed_shard: number of GSI shard for this status
+            for more information.
+        :param n_in_progress_shard: number of GSI shard for this status.
+        :param n_failed_shard: number of GSI shard for this status.
         :param n_succeeded_shard: number of GSI shard for this status,
             the succeeded status usually has the most shard, unless you will
             delete them from DynamoDB after succeeded.
-        :param n_ignored_shard: number of GSI shard for this status
-        :param sep: the separator string between job_id and task_id
+        :param n_ignored_shard: number of GSI shard for this status.
+        :param more_pending_status: additional pending status code that logically
+            equal to "pending" status.
+        :param sep: the separator string between job_id and task_id.
         :param status_zero_pad: how many digits the max status code have,
             it ensures that the encoded status can be used in comparison
         :param status_sharding_pad: how many digits the max shard number have,
@@ -380,6 +384,11 @@ class TrackerConfig:
             ignored_status: n_ignored_shard,
         }
 
+        if more_pending_status is None:
+            more_pending_status = []
+        if isinstance(more_pending_status, int):
+            more_pending_status = [more_pending_status]
+
         return cls(
             use_case_id=use_case_id,
             sep=sep,
@@ -397,6 +406,7 @@ class TrackerConfig:
             n_failed_shard=n_failed_shard,
             n_succeeded_shard=n_succeeded_shard,
             n_ignored_shard=n_ignored_shard,
+            more_pending_status=more_pending_status,
             traceback_stack_limit=traceback_stack_limit,
             status_enum=StatusEnum,
             status_shards=status_shards,
@@ -744,7 +754,7 @@ class BaseTask(Model):
     def start(
         cls,
         task_id: str,
-        allowed_status: T.Optional[T.List[int]] = None,
+        more_pending_status: T.Optional[T.Union[int, T.List[int]]] = None,
         detailed_error: bool = False,
         debug: bool = False,
     ):
@@ -782,14 +792,16 @@ class BaseTask(Model):
             )
 
         try:
-            is_valid_status = (cls.status == cls.config.pending_status) | (
+            # create the condition that the current task status is "ready to start",
+            # in other words, if the status is any of "pending", "failed" or "more_pending_status".
+            is_ready_to_start = (cls.status == cls.config.pending_status) | (
                 cls.status == cls.config.failed_status
             )
-            if allowed_status is None:
-                allowed_status = []
-            else:
-                for status in allowed_status:
-                    is_valid_status |= cls.status == status
+            if more_pending_status is None:
+                more_pending_status = cls.config.more_pending_status
+            if more_pending_status:
+                for status in more_pending_status:
+                    is_ready_to_start |= cls.status == status
             res = task.update(
                 actions=[
                     cls.value.set(
@@ -818,7 +830,7 @@ class BaseTask(Model):
                             )
                         )
                     )
-                    & is_valid_status
+                    & is_ready_to_start
                 ),
             )
         except UpdateError as e:
@@ -861,23 +873,23 @@ class BaseTask(Model):
                         )
                         if debug:  # pragma: no cover # pragma: no cover
                             print("❌ task failed to get lock, because it is ignored.")
-                    elif task_.status not in allowed_status:
-                        if allowed_status:
+                    elif task_.status not in more_pending_status:
+                        if more_pending_status:
                             error = TaskIsNotReadyToStartError(
                                 f"{TaskIsNotReadyToStartError.to_task(cls.config.use_case_id, task_id)} is not ready to start, "
-                                f"the status {task_.status} is not in the allowed status {allowed_status}."
+                                f"the status {task_.status} is not in the ready-to-start status {more_pending_status}."
                             )
-                            if debug:
+                            if debug:  # pragma: no cover
                                 print(
                                     f"❌ task is not ready to start, "
-                                    f"the status {task_.status} is not in the allowed status: {allowed_status}."
+                                    f"the status {task_.status} is not in the ready-to-start status: {more_pending_status}."
                                 )
                         else:
                             error = TaskIsNotReadyToStartError.make(
                                 use_case_id=cls.config.use_case_id,
                                 task_id=task_id,
                             )
-                            if debug:
+                            if debug:  # pragma: no cover
                                 print(
                                     "❌ task is not ready to start yet, "
                                     "either it is locked or status is not in 'pending' or 'failed'."

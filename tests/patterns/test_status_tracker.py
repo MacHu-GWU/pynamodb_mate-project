@@ -43,18 +43,18 @@ class Task(BaseTask):
 
 class Step1StatusEnum(BaseStatusEnum):
     pending = 10
-    in_progress = 20
-    failed = 30
-    succeeded = 40
-    ignored = 50
+    in_progress = 12
+    failed = 14
+    succeeded = 16
+    ignored = 18
 
 
 class Step2StatusEnum(BaseStatusEnum):
-    pending = 40
-    in_progress = 70
-    failed = 80
-    succeeded = 90
-    ignored = 100
+    pending = 20
+    in_progress = 22
+    failed = 24
+    succeeded = 26
+    ignored = 28
 
 
 class Step1(Task):
@@ -90,6 +90,7 @@ class Step2(Task):
         n_failed_shard=5,
         n_succeeded_shard=10,
         n_ignored_shard=5,
+        more_pending_status=Step1StatusEnum.succeeded.value,
     )
 
 
@@ -188,7 +189,7 @@ class Base(BaseTest):
         task_id = "t-1"
 
         # ----------------------------------------------------------------------
-        # run Step 1, it will succeed
+        # run Step 2, it will fail since event the step 1 is not started yet
         # ----------------------------------------------------------------------
         utc_now = get_utc_now()
         time.sleep(0.001)
@@ -202,6 +203,13 @@ class Base(BaseTest):
         assert step1.status == Step1StatusEnum.pending.value
         assert step1.is_locked() is False
 
+        with pytest.raises(TaskIsNotReadyToStartError):
+            with Step2.start(task_id, detailed_error=True, debug=False) as exec_ctx:
+                pass
+
+        # ----------------------------------------------------------------------
+        # run Step 1, it will succeed
+        # ----------------------------------------------------------------------
         # start the job, this time it will succeed
         exec_ctx: ExecutionContext
         with Step1.start(task_id, debug=False) as exec_ctx:
@@ -258,7 +266,7 @@ class Base(BaseTest):
         # run Step 2, it will fail first time
         # ----------------------------------------------------------------------
         step2 = Step2.get_one_or_none(task_id=task_id)
-        assert step2.is_pending()
+        assert step2.status == Step1StatusEnum.succeeded.value
         assert step2.is_locked() is False
 
         utc_now = get_utc_now()
@@ -505,12 +513,12 @@ class Base(BaseTest):
         assert Step1.count_tasks_by_use_case_id() == 0
 
 
-class TestStatusTrackerV2UseMock(Base):
+class TestStatusTrackerUseMock(Base):
     use_mock = True
 
 
 @pytest.mark.skipif(IS_CI, reason="Skip test that requires AWS resources in CI.")
-class TestStatusTrackerV2UseAws(Base):
+class TestStatusTrackerUseAws(Base):
     use_mock = False
 
 
