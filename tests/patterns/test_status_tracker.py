@@ -314,7 +314,7 @@ class Base(BaseTest):
         utc_now = get_utc_now()
         time.sleep(0.001)
 
-        with Step2.start(task_id, debug=False) as exec_ctx:
+        with Step2.start(task_id, more_pending_status=Step1StatusEnum.succeeded.value, debug=False) as exec_ctx:
             exec_ctx.set_data({"version": 2})
 
         # check the in-memory updated task

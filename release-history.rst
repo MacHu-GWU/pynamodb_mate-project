@@ -17,6 +17,13 @@ Backlog
 **Miscellaneous**
 
 
+6.0.0.3 (2024-06-06)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Bugfixes**
+
+- Fix a bug that the :meth:`pynamodb_mate.patterns.status_tracker.impl.BaseStatusTracker.start` will faile when ``more_pending_status`` argument is an integer.
+
+
 6.0.0.2 (2024-06-05)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Minor Improvements**

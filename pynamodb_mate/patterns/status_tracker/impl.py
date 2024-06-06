@@ -179,8 +179,8 @@ class StatusNameEnum(enum.Enum):
     pending = "pending"
     in_progress = "in_progress"
     failed = "failed"
-    succeeded = "success"
-    ignored = "ignore"
+    succeeded = "succeeded"
+    ignored = "ignored"
 
 
 class BaseStatusEnum(int, enum.Enum):
@@ -799,6 +799,10 @@ class BaseTask(Model):
             )
             if more_pending_status is None:
                 more_pending_status = cls.config.more_pending_status
+            elif isinstance(more_pending_status, int):
+                more_pending_status = [more_pending_status]
+            else:  # pragma: no cover
+                pass
             if more_pending_status:
                 for status in more_pending_status:
                     is_ready_to_start |= cls.status == status
