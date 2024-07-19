@@ -91,7 +91,8 @@ def batch_delete_s3_objects(
 
     groups = group_by(pairs, get_key=lambda x: x[0])
     for bucket, bucket_key_pairs in groups.items():
-        s3_client.delete_objects(
-            Bucket=bucket,
-            Delete=dict(Objects=[dict(Key=key) for _, key in bucket_key_pairs]),
-        )
+        if len(bucket_key_pairs):
+            s3_client.delete_objects(
+                Bucket=bucket,
+                Delete=dict(Objects=[dict(Key=key) for _, key in bucket_key_pairs]),
+            )

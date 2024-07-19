@@ -46,6 +46,9 @@ def get_s3_key(
     prefix: str,
 ) -> str:
     """
+    Figure out the S3 key location for the large attribute based on the DynamoDB
+    item's partition key, sort key, attribute name, and the value of the attribute.
+
     :param pk: partition key.
     :param sk: sort key, use None if no sort key.
     :param attr: large attribute name.
@@ -53,7 +56,6 @@ def get_s3_key(
     :param prefix: common S3 prefix.
 
     :return: example "${prefix}/pk={pk}/sk={sk}/attr={attr}/md5={md5}"
-
     """
     parts = list()
     if prefix:  # pragma: no cover
@@ -69,6 +71,18 @@ def get_s3_key(
     md5 = get_md5(value)
     parts.append(f"md5={md5}")
     return "/".join(parts)
+
+
+T_S3_KEY_GETTER = T.Callable[
+    [
+        T.Union[str, int],
+        T.Optional[T.Union[str, int]],
+        str,
+        bytes,
+        str,
+    ],
+    str,
+]
 
 
 def split_s3_uri(s3_uri: str) -> T.Tuple[str, str]:
@@ -224,6 +238,7 @@ class LargeAttributeMixin:
         prefix: str,
         update_at: datetime,
         s3_put_object_kwargs: T.Optional[T.Dict[str, T.Dict[str, T.Any]]] = None,
+        s3_key_getter: T_S3_KEY_GETTER = get_s3_key,
     ) -> PutS3Response:
         """
         Put large attribute data to S3.
@@ -263,7 +278,7 @@ class LargeAttributeMixin:
             s3_put_object_kwargs = dict()
         put_s3_response = PutS3Response(actions=[])
         for attr, value in kvs.items():
-            s3_key = get_s3_key(pk=pk, sk=sk, attr=attr, value=value, prefix=prefix)
+            s3_key = s3_key_getter(pk, sk, attr, value, prefix)
             s3_uri = join_s3_uri(bucket, s3_key)
             if is_s3_object_exists(s3_client, bucket=bucket, key=s3_key):
                 put_executed = False
@@ -303,6 +318,7 @@ class LargeAttributeMixin:
         prefix: str,
         update_at: datetime,
         s3_put_object_kwargs: T.Optional[T.Dict[str, T.Dict[str, T.Any]]] = None,
+        s3_key_getter: T_S3_KEY_GETTER = get_s3_key,
         attributes: T.Optional[T.Dict[str, T.Any]] = None,
         clean_up_when_failed: bool = True,
         _error: T.Optional[Exception] = None,
@@ -340,6 +356,7 @@ class LargeAttributeMixin:
             prefix=prefix,
             update_at=update_at,
             s3_put_object_kwargs=s3_put_object_kwargs,
+            s3_key_getter=s3_key_getter,
         )
         try:
             # this is for unit test purpose to simulate the DynamoDB operation failed
@@ -370,6 +387,7 @@ class LargeAttributeMixin:
         prefix: str,
         update_at: datetime,
         s3_put_object_kwargs: T.Optional[T.Dict[str, T.Dict[str, T.Any]]] = None,
+        s3_key_getter: T_S3_KEY_GETTER = get_s3_key,
         update_actions: T.Optional[T.List[Action]] = None,
         consistent_read: bool = False,
         clean_up_when_succeeded: bool = True,
@@ -412,6 +430,7 @@ class LargeAttributeMixin:
             prefix=prefix,
             update_at=update_at,
             s3_put_object_kwargs=s3_put_object_kwargs,
+            s3_key_getter=s3_key_getter,
         )
         got_old_model = (
             False  # IDE show warning that this line is useless, but we do need it

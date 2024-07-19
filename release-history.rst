@@ -17,6 +17,13 @@ Backlog
 **Miscellaneous**
 
 
+6.0.0.4 (2024-07-19)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Minor Improvements**
+
+- Now most of :meth:`pynamodb_mate.patterns.large_attribute.impl.LargeAttributeMixin` methods allow to customize the ``s3_key_getter`` function. So that developer can customize how to convert a DynamoDB item into an S3 key for large attribute
+
+
 6.0.0.3 (2024-06-06)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Bugfixes**
