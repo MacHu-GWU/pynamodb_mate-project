@@ -131,7 +131,7 @@ class Model(PynamodbModel):
         range_key: T.Optional[T.Any] = None,
         consistent_read: bool = False,
         attributes_to_get: T.Optional[T.Sequence[str]] = None,
-    ) -> T.Optional["Model"]:
+    ) -> T.Optional["T_MODEL"]:
         """
         Get one Dynamodb item object or None if not exists.
 
