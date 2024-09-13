@@ -17,6 +17,13 @@ Backlog
 **Miscellaneous**
 
 
+6.0.1.1 (2024-09-13)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Features and Improvements**
+
+- add :mod:`pynamodb_mate.patterns.relationship_v2`, a new version of the relationship pattern. It is more powerful and flexible than the old version. The API is more clean, easy to use, and you can write way less code to achieve the same goal.
+
+
 6.0.0.4 (2024-07-19)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 **Minor Improvements**

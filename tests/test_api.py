@@ -74,6 +74,15 @@ def test_api():
     _ = pm.patterns.relationship.OneToManyRelationshipType
     _ = pm.patterns.relationship.ManyToManyRelationshipType
     _ = pm.patterns.relationship.RelationshipSetting
+    _ = pm.patterns.relationship_v2.BaseLookupIndex
+    _ = pm.patterns.relationship_v2.BaseEntity
+    _ = pm.patterns.relationship_v2.T_BASE_ENTITY
+    _ = pm.patterns.relationship_v2.ROOT
+    _ = pm.patterns.relationship_v2.ItemType
+    _ = pm.patterns.relationship_v2.EntityType
+    _ = pm.patterns.relationship_v2.RelationshipType
+    _ = pm.patterns.relationship_v2.OneToManyRelationshipType
+    _ = pm.patterns.relationship_v2.ManyToManyRelationshipType
     _ = pm.patterns.status_tracker.TaskExecutionError
     _ = pm.patterns.status_tracker.TaskIsNotInitializedError
     _ = pm.patterns.status_tracker.TaskIsNotReadyToStartError
