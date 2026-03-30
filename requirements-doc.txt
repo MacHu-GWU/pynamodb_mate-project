@@ -13,7 +13,7 @@ nbsphinx==0.8.12
 # generate reStructuredText in Python
 rstobj==1.2.1
 # syntax highlight
-pygments==2.15.1
+pygments==2.20.0
 # iPython
 ipython==8.10.0
 # ipykernel
